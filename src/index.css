@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+    background-color: #030308;
+    color: #F8FAFC;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: #030308;
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+/* Custom Cosmic Glows & Glassmorphism (Deliberate & Restrained) */
+.cosmic-glass {
+  background: rgba(9, 8, 23, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(129, 60, 255, 0.18);
+}
+
+.cosmic-glass-blue {
+  background: rgba(9, 12, 28, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(49, 92, 255, 0.22);
+}
+
+.cosmic-glass-gold {
+  background: rgba(20, 16, 10, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(245, 196, 81, 0.25);
+}
+
+/* Subtle Glowing Accents */
+.glow-text-blue {
+  text-shadow: 0 0 20px rgba(49, 92, 255, 0.5);
+}
+
+.glow-text-violet {
+  text-shadow: 0 0 20px rgba(129, 60, 255, 0.5);
+}
+
+.glow-text-gold {
+  text-shadow: 0 0 20px rgba(245, 196, 81, 0.5);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #030308;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #17102E;
+  border-radius: 4px;
+  border: 1px solid rgba(129, 60, 255, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #813CFF;
+}
+
+/* Cosmic Light Trail Gradient */
+.cosmic-gradient-border {
+  position: relative;
+}
+
+.cosmic-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(49, 92, 255, 0.5), rgba(129, 60, 255, 0.3), rgba(245, 196, 81, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+

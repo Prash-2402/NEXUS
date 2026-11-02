@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="nexusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#315CFF" />
+      <stop offset="50%" stop-color="#813CFF" />
+      <stop offset="100%" stop-color="#F5C451" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Cosmic Orbit Ring -->
+  <circle cx="50" cy="50" r="42" stroke="url(#nexusGrad)" stroke-width="2.5" stroke-dasharray="8 6" opacity="0.8" />
+  <!-- Convergence Geometry (Stylized N and 7) -->
+  <path d="M 28 72 L 28 28 L 52 64 L 72 28 L 72 42 L 56 70 L 46 54 L 38 68 Z" fill="url(#nexusGrad)" filter="url(#glow)" />
+  <!-- Central Stellar Core -->
+  <circle cx="50" cy="50" r="4" fill="#F5C451" filter="url(#glow)" />
+  <circle cx="50" cy="50" r="1.5" fill="#FFFFFF" />
+</svg>
+
