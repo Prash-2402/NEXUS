@@ -6,6 +6,7 @@
  * placeholders to ensure no fake information is communicated to participants.
  */
 
+
 import { siteConfig } from '../config/site';
 
 export type EventCategory = 'all' | 'technical' | 'non-technical' | 'cultural';
