@@ -1,338 +1,320 @@
 /**
- * NEXUS 7 — Event Universe Data Store
- * 
- * Contains all verified events for Technical, Non-Technical, and Cultural categories.
- * Note: Unannounced official details (timings, venues, rules, prize pools) use "Details coming soon"
- * placeholders to ensure no fake information is communicated to participants.
+ * NEXUS — events.
+ * The schedule is built from the `sessions` of each event, so dates only live here.
+ * Unannounced details are marked "To be announced" rather than invented.
  */
 
 
 import { siteConfig } from '../config/site';
 
-export type EventCategory = 'all' | 'technical' | 'non-technical' | 'cultural';
+export type WorldId = 'technical' | 'non-technical' | 'cultural';
+export type EventFilter = 'all' | WorldId;
 
-export interface SubActivity {
-  id: string;
-  name: string;
-  description: string;
-  isProvisionalName?: boolean;
+export interface EventSession {
+  date: string; // YYYY-MM-DD
+  time: string; // e.g. "9:00 AM – 1:00 PM"
+  venue?: string; // overrides the event venue for this day
+  label?: string; // e.g. "Kickoff", "Day 1"
 }
 
 export interface NexusEvent {
   id: string;
   name: string;
-  category: 'technical' | 'non-technical' | 'cultural';
-  shortDescription: string;
+  world: WorldId;
+  summary: string;
   description: string;
-  badge?: string;
-  iconName: 'Cpu' | 'Binary' | 'Terminal' | 'BookOpen' | 'Trophy' | 'Palette' | 'Music' | 'Mic' | 'Theater' | 'Search' | 'Gamepad' | 'Users' | 'Lightbulb';
   format: string;
   eligibility: string;
-  date: string;
-  startTime: string;
-  endTime: string;
+  sessions: EventSession[];
   venue: string;
   poc?: string;
+  note?: string;
   registrationEnabled: boolean;
-  registrationUrl: string; // Separate Google Form URL for this specific event
-  formEntryValue?: string;
-  subActivities?: SubActivity[];
-  rulesPlaceholder?: string;
+  registrationUrl: string;
 }
 
-export interface CategoryInfo {
-  id: 'technical' | 'non-technical' | 'cultural';
+export interface WorldInfo {
+  id: WorldId;
+  index: string;
   title: string;
   worldName: string;
-  headline: string;
+  line: string;
   description: string;
-  accentColor: string;
-  glowColor: string;
-  gradient: string;
-  borderClass: string;
+  color: string;
 }
 
-export const categoryMeta: Record<'technical' | 'non-technical' | 'cultural', CategoryInfo> = {
+export const worlds: Record<WorldId, WorldInfo> = {
   technical: {
     id: 'technical',
+    index: '01',
     title: 'Technical',
     worldName: 'World of Synthesis',
-    headline: 'Digital Geometry & Algorithmic Supremacy',
-    description: 'High-octane coding challenges, cryptic cyber-mazes, reverse engineering trials, and masterclass technology workshops.',
-    accentColor: '#315CFF',
-    glowColor: 'rgba(49, 92, 255, 0.4)',
-    gradient: 'from-[#315CFF]/20 via-[#17102E]/60 to-[#030308]',
-    borderClass: 'border-[#315CFF]/30 hover:border-[#315CFF]/70',
+    line: 'Build, break and decode.',
+    description:
+      'Murder mysteries, cipher hunts, reverse engineering and hands-on workshops for people who like to look under the hood.',
+    color: '#6EA8FF',
   },
   'non-technical': {
     id: 'non-technical',
+    index: '02',
     title: 'Non-Technical',
-    worldName: 'World of Kinetic Strategy',
-    headline: 'High-Spirited Intellect & Olympic Feats',
-    description: 'From gripping murder mysteries and athletic sports showdowns to the flagship multi-stage NEXUS Olympics games.',
-    accentColor: '#813CFF',
-    glowColor: 'rgba(129, 60, 255, 0.4)',
-    gradient: 'from-[#813CFF]/20 via-[#17102E]/60 to-[#030308]',
-    borderClass: 'border-[#813CFF]/30 hover:border-[#813CFF]/70',
+    worldName: 'World of Strategy',
+    line: 'Think fast, play smart.',
+    description:
+      'The NEXUS Olympics, Family Feud, esports and Shark Tank. Quick wit, teamwork and nerve under pressure.',
+    color: '#A78BFA',
   },
   cultural: {
     id: 'cultural',
+    index: '03',
     title: 'Cultural',
     worldName: 'World of Resonance',
-    headline: 'Stellar Expression & Artistic Grace',
-    description: 'Electrifying choreographies, soulful musical renditions, and a stage-commanding showcase of multifaceted talents.',
-    accentColor: '#F5C451',
-    glowColor: 'rgba(245, 196, 81, 0.35)',
-    gradient: 'from-[#F5C451]/15 via-[#813CFF]/20 to-[#030308]',
-    borderClass: 'border-[#F5C451]/30 hover:border-[#F5C451]/70',
+    line: 'Take the stage.',
+    description:
+      'Song, dance and an open talent show. A stage for everything that does not fit in a spreadsheet.',
+    color: '#F5C451',
   },
 };
 
+export const worldOrder: WorldId[] = ['technical', 'non-technical', 'cultural'];
+
+const form = (id: string) => siteConfig.registration.eventForms[id] ?? '';
+
 export const eventsData: NexusEvent[] = [
-  // ================= TECHNICAL EVENTS =================
+  // Technical
+  {
+    id: 'tableau-workshop',
+    name: 'Tableau Workshop',
+    world: 'technical',
+    summary: 'A hands-on session on turning raw data into clear, interactive dashboards with Tableau.',
+    description:
+      'Learn the Tableau workflow from the ground up: connecting data, building calculated fields, designing dashboards and telling a story with your visuals. Bring a laptop and leave with a working dashboard.',
+    format: 'Hands-on workshop',
+    eligibility: 'Open to all students. Prior registration required.',
+    sessions: [{ date: '2026-11-21', time: '9:00 AM – 1:00 PM' }],
+    venue: 'Amoga Hall',
+    poc: 'Swetha & Prajwal S',
+    note: 'Setup instructions and software requirements will be emailed to registered attendees.',
+    registrationEnabled: true,
+    registrationUrl: form('tableau-workshop'),
+  },
   {
     id: 'murder-mystery',
     name: 'Murder Mystery',
-    category: 'technical',
-    shortDescription: 'An immersive investigative forensic simulation where clues, alibis, and deductive reasoning reveal the truth.',
-    description: 'A staged crime scene, suspicious testimonies, and a trail of forensic evidence. Work through interrogations and psychological deductions to uncover the perpetrator before time runs out.',
-    badge: 'Forensic Trial',
-    iconName: 'Search',
-    format: 'Team Investigation',
+    world: 'technical',
+    summary: 'A staged crime scene. Follow the evidence, question the suspects and name the culprit.',
+    description:
+      'Work through forensic clues, conflicting testimonies and hidden motives. Teams that read the evidence best and reason fastest crack the case.',
+    format: 'Team investigation',
     eligibility: 'Open to all registered participants.',
-    date: '23 November 2026',
-    startTime: '9:00 AM',
-    endTime: '4:00 PM',
-    venue: 'Multipurpose Hall - Devdan',
-    poc: 'Swetha & Prajwal VL',
+    sessions: [{ date: '2026-11-23', time: '9:00 AM – 4:00 PM' }],
+    venue: 'Multipurpose Hall, Devdan',
+    poc: 'Swetha & Prajwal S',
+    note: 'Case briefings are handed out at the scene.',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['murder-mystery'],
-    formEntryValue: 'murder_mystery',
-    rulesPlaceholder: 'Detective briefings, dossier access, and case parameters will be delivered at the crime scene briefing.',
+    registrationUrl: form('murder-mystery'),
   },
   {
     id: 'cryptic-hunt',
     name: 'Cryptic Hunt',
-    category: 'technical',
-    shortDescription: 'A multi-layered digital enigma spanning cyberspace, cipher decrypts, and algorithmic riddles.',
-    description: 'Put your lateral thinking and cyber-investigative skills to the test. Unravel obscure internet trails, decode encrypted ciphers, and race against the clock to crack each cryptic tier.',
-    badge: 'Cyber Enigma',
-    iconName: 'Binary',
-    format: 'Competitive Team Hunt',
+    world: 'technical',
+    summary: 'Ciphers, hidden trails and layered riddles. Race to crack every level first.',
+    description:
+      'A multi-level puzzle hunt across physical and digital clues. Decode ciphers, follow obscure trails and outthink the other teams against the clock.',
+    format: 'Team hunt',
     eligibility: 'Open to all registered students.',
-    date: '2 December 2026',
-    startTime: '9:00 AM',
-    endTime: '4:00 PM',
-    venue: 'Block 2 Seminar Hall (4th & 2nd Floor)',
+    sessions: [{ date: '2026-12-02', time: '9:00 AM – 4:00 PM' }],
+    venue: 'Block 2 Seminar Hall (2nd & 4th Floor)',
     poc: 'Vedant & Harshdeep',
+    note: 'Scoring, hints and fair-play rules will be announced before the hunt.',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['cryptic-hunt'],
-    formEntryValue: 'cryptic_hunt',
-    rulesPlaceholder: 'Scoring criteria, hint mechanisms, and anti-cheating guidelines will be announced prior to the hunt start.',
+    registrationUrl: form('cryptic-hunt'),
   },
   {
     id: 'reverse-engineering',
     name: 'Reverse Engineering',
-    category: 'technical',
-    shortDescription: 'Deconstruct complex binaries, unearth hidden logic, and rebuild architectural blueprints from scratch.',
-    description: 'Analyze compiled binaries, decipher obfuscated logic, and reconstruct underlying codebases. A pure trial of diagnostic precision, binary analysis, and systems mastery.',
-    badge: 'Systems Deep Dive',
-    iconName: 'Cpu',
-    format: 'Competitive Trial',
+    world: 'technical',
+    summary: 'Take a system apart, find the hidden logic and rebuild how it works.',
+    description:
+      'Analyse compiled programs, untangle obfuscated logic and reconstruct what the code really does. A test of patience, precision and systems thinking.',
+    format: 'Individual / team trial',
     eligibility: 'Open to all registered participants.',
-    date: '4 December 2026',
-    startTime: '9:00 AM',
-    endTime: '4:00 PM',
-    venue: 'Devdan Multipurpose & Devdan Creativity Room',
-    poc: 'Vedant, Prajwal V L & Prajwal S',
+    sessions: [{ date: '2026-12-04', time: '9:00 AM – 4:00 PM' }],
+    venue: 'Devdan Multipurpose & Creativity Room',
+    poc: 'Vedant, Prajwal VL & Prajwal S',
+    note: 'Tools, platforms and time limits will be shared in the briefing.',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['reverse-engineering'],
-    formEntryValue: 'reverse_engineering',
-    rulesPlaceholder: 'Tooling specifications, platform binaries, and time bounds will be provided in the briefing deck.',
+    registrationUrl: form('reverse-engineering'),
   },
   {
-    id: 'workshops',
-    name: 'AI Workshops & Masterclasses',
-    category: 'technical',
-    shortDescription: 'Hands-on masterclasses in next-generation artificial intelligence, machine learning architectures, and modern frameworks.',
-    description: 'Immerse yourself in specialized technical masterclasses conducted by experienced practitioners. Gain practical skills in state-of-the-art AI systems, data pipelines, and computational intelligence.',
-    badge: 'Hands-On Learning',
-    iconName: 'BookOpen',
-    format: 'Interactive Workshop Sessions',
-    eligibility: 'Open to all students with prior registration.',
-    date: '28 November 2026',
-    startTime: '9:00 AM',
-    endTime: '1:00 PM',
-    venue: 'Amoga Hall (Workshop-1) / TBD (Workshop-2)',
-    poc: 'Swetha & Prajwal S (Workshop-1) / Harshdeep (Workshop-2)',
+    id: 'ai-workshop',
+    name: 'AI Workshop',
+    world: 'technical',
+    summary: 'A second hands-on workshop on applied AI tools and workflows.',
+    description:
+      'A practical session on modern AI tools and workflows, led by experienced practitioners. Bring a laptop; setup details will be emailed to registered attendees.',
+    format: 'Hands-on workshop',
+    eligibility: 'Open to all students. Prior registration required.',
+    sessions: [{ date: '2026-12-01', time: '9:00 AM – 1:00 PM' }],
+    venue: 'Amoga Hall',
+    poc: 'Harshdeep',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['workshops'],
-    formEntryValue: 'workshops',
-    rulesPlaceholder: 'Prerequisites, laptop setup instructions, and software requirements will be emailed to registered attendees.',
-  },
-  {
-    id: 'hackathon',
-    name: 'Hackathon',
-    category: 'technical',
-    shortDescription: 'The premier AI-driven innovation sprint where visionaries build high-impact autonomous solutions under pressure.',
-    description: 'Assemble your team of builders, researchers, and designers to solve forward-thinking engineering problems. Build functional prototypes, harness AI models, and pitch your work before a panel of academic and industry specialists.',
-    badge: 'Flagship Tech',
-    iconName: 'Terminal',
-    format: 'Team-based sprint',
-    eligibility: 'Open to university students.',
-    date: '23 November 2026 (Kickoff)',
-    startTime: 'Details coming soon',
-    endTime: 'Details coming soon',
-    venue: 'Campus Tech Labs / Details coming soon',
-    poc: 'Swetha & Prajwal VL',
-    registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['hackathon'],
-    formEntryValue: 'hackathon',
-    rulesPlaceholder: 'Complete problem statements, evaluation rubrics, and submission requirements will be released prior to commencement.',
+    registrationUrl: form('ai-workshop'),
   },
 
-  // ================= NON-TECHNICAL EVENTS =================
+  // Non-technical
   {
     id: 'nexus-olympics',
     name: 'NEXUS Olympics',
-    category: 'non-technical',
-    shortDescription: 'The flagship multi-stage decathlon featuring confidential surprise challenges unveiled live at the arena.',
-    description: 'A vibrant showdown of quick wit, teamwork, and spontaneous battles across multiple surprise arenas. The internal events are kept strictly confidential and will be revealed as live surprises during the festival.',
-    badge: 'Surprise Arenas',
-    iconName: 'Trophy',
-    format: 'Multi-stage Championship',
-    eligibility: 'Open to all registered squads and participants.',
-    date: '25 & 26 November 2026',
-    startTime: '9:00 AM',
-    endTime: '4:00 PM',
-    venue: 'Block 5 Seminar Hall & Architecture 1st Conf Room',
-    poc: 'Sanjana & Prajwal S',
+    world: 'non-technical',
+    summary: 'A two-day, multi-round championship. Every challenge stays secret until it starts.',
+    description:
+      'Teams compete across a series of surprise rounds that test wit, reflexes and teamwork. Points add up across both days towards the NEXUS Olympics trophy.',
+    format: 'Multi-round team championship',
+    eligibility: 'Open to all registered teams.',
+    sessions: [
+      { date: '2026-11-25', time: '9:00 AM – 4:00 PM', venue: 'Block 5 Seminar Hall', label: 'Day 1' },
+      { date: '2026-11-26', time: '9:00 AM – 4:00 PM', venue: 'Architecture 1st Floor Conference Room', label: 'Day 2' },
+    ],
+    venue: 'Block 5 Seminar Hall & Architecture Conference Room',
+    poc: 'Sanjana, Jemimah & Prajwal S',
+    note: 'Rounds are revealed live at the arena.',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['nexus-olympics'],
-    formEntryValue: 'nexus_olympics',
-    rulesPlaceholder: 'Points will accumulate across all surprise rounds towards the overall NEXUS Olympics trophy. Challenge parameters and arena rules are revealed live.',
+    registrationUrl: form('nexus-olympics'),
   },
   {
     id: 'family-feud',
     name: 'Family Feud',
-    category: 'non-technical',
-    shortDescription: 'The exhilarating battle of intuition and rapid reflexes: guess the most popular survey responses under pressure.',
-    description: 'A high-energy team showdown inspired by the classic family face-off. Test how well your squad reads the room, anticipates popular culture, and locks in top answers before the buzzer sounds.',
-    badge: 'Crowd Pulse',
-    iconName: 'Users',
-    format: 'Team Face-off',
+    world: 'non-technical',
+    summary: 'Guess what the crowd said. Read the room and lock in the top answers before the buzzer.',
+    description:
+      'A fast team face-off built around survey answers. The team that best predicts popular opinion takes the round.',
+    format: 'Team face-off',
     eligibility: 'Open to all registered teams.',
-    date: '27 November 2026',
-    startTime: '9:00 AM',
-    endTime: '4:00 PM',
-    venue: 'Block 1 Audi',
+    sessions: [{ date: '2026-11-27', time: '9:00 AM – 4:00 PM' }],
+    venue: 'Block 1 Auditorium',
     poc: 'Vedant & Merwin',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['family-feud'],
-    formEntryValue: 'family_feud',
-    rulesPlaceholder: 'Teams will compete in bracket rounds with point multipliers and sudden-death buzzer challenges.',
+    registrationUrl: form('family-feud'),
   },
   {
     id: 'esports',
-    name: 'ESports Championship',
-    category: 'non-technical',
-    shortDescription: 'Competitive tournaments testing agility, tactical coordination, and gaming supremacy in the arena.',
-    description: 'Take the battle to the virtual battlefield. A high-voltage showcase of reaction time, strategic synergy, and competitive gaming across premier multiplayer titles.',
-    badge: 'Gaming Arena',
-    iconName: 'Gamepad',
-    format: 'Tournament Brackets',
-    eligibility: 'Open to all registered gamers.',
-    date: '3 December 2026',
-    startTime: '9:00 AM',
-    endTime: '4:00 PM',
-    venue: 'Block 2 4th Floor',
-    poc: 'Merwin & Prajwal V L',
+    name: 'Esports Championship',
+    world: 'non-technical',
+    summary: 'Bracket tournaments across popular multiplayer titles. Reflexes, coordination and clutch plays.',
+    description:
+      'Compete in a bracket-style tournament that rewards strategy, teamwork and mechanical skill.',
+    format: 'Tournament brackets',
+    eligibility: 'Open to all registered players.',
+    sessions: [{ date: '2026-12-03', time: '9:00 AM – 4:00 PM' }],
+    venue: 'Block 2, 4th Floor',
+    poc: 'Merwin & Prajwal VL',
+    note: 'Game titles, brackets and match timings will be sent to registered players.',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['esports'],
-    formEntryValue: 'esports',
-    rulesPlaceholder: 'Tournament brackets, game titles, hardware guidelines, and match timings will be sent to registered players.',
+    registrationUrl: form('esports'),
   },
   {
     id: 'shark-tank',
     name: 'Shark Tank',
-    category: 'non-technical',
-    shortDescription: 'Pitch your breakthrough ventures, defend your unit economics, and negotiate under the spotlight.',
-    description: 'Step into the tank with your most compelling startup concepts, disruptive products, or social enterprises. Face probing questions from judges, substantiate market demand, and prove scalability.',
-    badge: 'Venture Pitch',
-    iconName: 'Lightbulb',
-    format: 'Team Pitch & Q&A',
-    eligibility: 'Open to aspiring student founders and teams.',
-    date: '4 December 2026',
-    startTime: '9:00 AM',
-    endTime: '4:00 PM',
-    venue: 'Block 1 Audi',
+    world: 'non-technical',
+    summary: 'Pitch your venture to the sharks. Defend your numbers and close the deal.',
+    description:
+      'Present a startup idea, product or social venture to a panel of judges. Expect tough questions about your market, model and plans to scale.',
+    format: 'Team pitch & Q&A',
+    eligibility: 'Open to student founders and teams.',
+    sessions: [{ date: '2026-12-04', time: '9:00 AM – 4:00 PM' }],
+    venue: 'Block 1 Auditorium',
     poc: 'Prajwal S & Swetha',
+    note: 'Five-minute pitch followed by five minutes of questions.',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['shark-tank'],
-    formEntryValue: 'shark_tank',
-    rulesPlaceholder: 'Deck submission limits, pitch duration (5 mins pitch + 5 mins Q&A), and evaluation rubrics will be detailed in the participant guide.',
+    registrationUrl: form('shark-tank'),
   },
 
-  // ================= CULTURAL EVENTS =================
+  // Cultural
   {
     id: 'song',
     name: 'Song',
-    category: 'cultural',
-    shortDescription: 'Soulful vocal performances and melodic compositions resonating across the universe.',
-    description: 'Step up to the microphone and captivate the audience with your vocal power, dynamic range, and musical authenticity across genres.',
-    badge: 'Acoustic & Melodic',
-    iconName: 'Mic',
-    format: 'Solo & Duet Performances',
+    world: 'cultural',
+    summary: 'Solo and duet vocal performances across every genre.',
+    description: 'Take the mic and win the room with your voice, range and stage presence.',
+    format: 'Solo & duet',
     eligibility: 'Open to student vocalists and instrumentalists.',
-    date: '23 November 2026',
-    startTime: '9:00 AM',
-    endTime: '1:00 PM',
-    venue: '3rd Block Audi',
-    poc: 'Joel J George & Joel DSilva (and Stacy)',
+    sessions: [{ date: '2026-11-23', time: '9:00 AM – 1:00 PM' }],
+    venue: 'Block 3 Auditorium',
+    poc: 'Joel J George & Joel DSilva',
+    note: 'Declare backing tracks and instruments when you register.',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['song'],
-    formEntryValue: 'song',
-    rulesPlaceholder: 'Audio backing tracks and instrument requirements must be declared during registration confirmation.',
-  },
-  {
-    id: 'dance',
-    name: 'Dance',
-    category: 'cultural',
-    shortDescription: 'Breathtaking choreographies merging rhythm, synchrony, and cosmic expressive movement.',
-    description: 'Light up the stage with mesmerizing moves, synchrony, and storytelling. Open to diverse dance forms from classical fusion to urban hip-hop and contemporary expressions.',
-    badge: 'Stage Spectacle',
-    iconName: 'Palette',
-    format: 'Solo / Duet / Crew',
-    eligibility: 'Open to all university students.',
-    date: '2 December 2026',
-    startTime: '9:00 AM',
-    endTime: '4:00 PM',
-    venue: '3rd Block Audi',
-    poc: 'Joel J George & Stacy',
-    registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['dance'],
-    formEntryValue: 'dance',
-    rulesPlaceholder: 'Track submissions, time limits, and staging regulations will be shared with shortlisted entries.',
+    registrationUrl: form('song'),
   },
   {
     id: 'talent-show',
     name: 'Talent Show',
-    category: 'cultural',
-    shortDescription: 'An open cosmic arena for extraordinary arts: stand-up comedy, illusionism, poetry, and beyond.',
-    description: 'A grand celebration of unique creative abilities. Whether it is beatboxing, stand-up comedy, theatrical monologues, mimicry, or instrumental sorcery, take centre stage.',
-    badge: 'Spotlight Showcase',
-    iconName: 'Theater',
-    format: 'Individual or Collaborative',
-    eligibility: 'Open to all creative innovators.',
-    date: '30 November 2026',
-    startTime: '9:00 AM',
-    endTime: '1:00 PM',
-    venue: '3rd Block Audi',
-    poc: 'Joel J George & Sanjana',
+    world: 'cultural',
+    summary: 'Stand-up, beatboxing, mimicry, poetry or something nobody has seen before.',
+    description:
+      'An open stage for any talent. Solo or with friends, if it can hold an audience, it belongs here.',
+    format: 'Solo or group',
+    eligibility: 'Open to all students.',
+    sessions: [{ date: '2026-11-30', time: '9:00 AM – 1:00 PM' }],
+    venue: 'Block 3 Auditorium',
+    poc: 'Joel J George & Stacy',
+    note: 'Slots are limited and acts may be screened.',
     registrationEnabled: true,
-    registrationUrl: siteConfig.registration.eventForms['talent-show'],
-    formEntryValue: 'talent_show',
-    rulesPlaceholder: 'Performance slots are limited and subject to screening. Details on tech riders coming soon.',
+    registrationUrl: form('talent-show'),
+  },
+  {
+    id: 'dance',
+    name: 'Dance',
+    world: 'cultural',
+    summary: 'Solo, duet and crew performances, from classical fusion to hip-hop.',
+    description: 'Bring your choreography, your crew and your best moves to the main stage.',
+    format: 'Solo / duet / crew',
+    eligibility: 'Open to all university students.',
+    sessions: [{ date: '2026-12-02', time: '9:00 AM – 4:00 PM' }],
+    venue: 'Block 3 Auditorium',
+    poc: 'Joel J George & Joel Anthony',
+    note: 'Track submissions and time limits will be shared with registered entries.',
+    registrationEnabled: true,
+    registrationUrl: form('dance'),
   },
 ];
 
+/** Non-competitive programme items that appear in the schedule only. */
+export interface Ceremony {
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  venue: string;
+  description: string;
+}
+
+export const ceremonies: Ceremony[] = [
+  {
+    id: 'valedictory',
+    name: 'Valedictory & Awards',
+    date: '2026-12-05',
+    time: '2:00 PM – 6:00 PM',
+    venue: 'Main Auditorium',
+    description: 'Closing ceremony, prize distribution and the final celebration of NEXUS.',
+  },
+];
+
+const dayFormatter = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+/** "21 Nov", "25 & 26 Nov" or "To be announced". */
+export function formatEventDates(event: NexusEvent): string {
+  if (event.sessions.length === 0) return 'To be announced';
+  const parts = event.sessions.map((s) => new Date(`${s.date}T00:00:00Z`));
+  if (parts.length === 1) return dayFormatter.format(parts[0]);
+  const sameMonth = parts.every((d) => d.getUTCMonth() === parts[0].getUTCMonth());
+  if (sameMonth) {
+    const month = dayFormatter.format(parts[0]).split(' ')[1];
+    return `${parts.map((d) => d.getUTCDate()).join(' & ')} ${month}`;
+  }
+  return parts.map((d) => dayFormatter.format(d)).join(' & ');
+}
+
+export function formatEventTime(event: NexusEvent): string {
+  return event.sessions[0]?.time ?? 'To be announced';
+}

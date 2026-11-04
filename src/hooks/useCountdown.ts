@@ -22,7 +22,7 @@ export function useCountdown(targetDateIso: string, endDateIso?: string): Countd
         minutes: 0,
         seconds: 0,
         status: 'completed',
-        formattedString: 'NEXUS Has Concluded',
+        formattedString: 'NEXUS 2026 has concluded',
       };
     }
 
@@ -33,7 +33,7 @@ export function useCountdown(targetDateIso: string, endDateIso?: string): Countd
         minutes: 0,
         seconds: 0,
         status: 'in-progress',
-        formattedString: 'NEXUS Is Live Now!',
+        formattedString: 'NEXUS is live now',
       };
     }
 

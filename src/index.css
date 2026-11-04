@@ -6,95 +6,157 @@
   :root {
     color-scheme: dark;
   }
-  
+
   html {
-    scroll-behavior: smooth;
-    background-color: #030308;
-    color: #F8FAFC;
-    overflow-x: hidden;
+    background: #04050b;
+    color: #eef1f8;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    background-color: #030308;
     min-height: 100vh;
     overflow-x: hidden;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #04050b;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+  h1, h2, h3, h4 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: rgba(143, 184, 255, 0.35);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid #8fb8ff;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-/* Custom Cosmic Glows & Glassmorphism (Deliberate & Restrained) */
-.cosmic-glass {
-  background: rgba(9, 8, 23, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(129, 60, 255, 0.18);
+@layer components {
+  .container-site {
+    @apply mx-auto w-full max-w-site px-5 sm:px-8;
+  }
+
+  .section {
+    @apply relative z-10 py-24 sm:py-32;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-label text-fg-muted;
+  }
+  .eyebrow::before {
+    content: '';
+    @apply block h-px w-8 bg-gradient-to-r from-transparent to-ice/70;
+  }
+
+  .heading-xl {
+    @apply font-display text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-fg sm:text-6xl lg:text-7xl;
+  }
+
+  .heading-lg {
+    @apply font-display text-3xl font-semibold leading-[1.08] tracking-tight text-fg sm:text-5xl;
+  }
+
+  .lead {
+    @apply text-base leading-relaxed text-fg-muted sm:text-lg;
+  }
+
+  .surface {
+    @apply rounded-2xl border border-white/[0.08] bg-ink-900/60 backdrop-blur-md;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 ease-out;
+  }
+  .btn-primary {
+    @apply btn bg-fg text-ink-950 hover:bg-white hover:shadow-[0_0_40px_-6px_rgba(143,184,255,0.7)];
+  }
+  .btn-ghost {
+    @apply btn border border-white/15 text-fg hover:border-white/40 hover:bg-white/[0.04];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.14em] text-fg-muted;
+  }
 }
 
-.cosmic-glass-blue {
-  background: rgba(9, 12, 28, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(49, 92, 255, 0.22);
+@layer utilities {
+  .bg-space-fallback {
+    background:
+      radial-gradient(60% 50% at 50% 35%, rgba(70, 92, 190, 0.22), transparent 70%),
+      radial-gradient(40% 40% at 80% 70%, rgba(120, 80, 200, 0.14), transparent 70%),
+      #04050b;
+  }
+
+  .bg-space-vignette {
+    background:
+      radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(4, 5, 11, 0.75) 100%),
+      linear-gradient(to bottom, rgba(4, 5, 11, 0) 70%, rgba(4, 5, 11, 0.5));
+  }
+
+  .text-gradient {
+    background: linear-gradient(100deg, #ffffff 0%, #bcd2ff 40%, #8fb8ff 60%, #f5c451 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hairline {
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.14), transparent);
+  }
+
+  .split-word {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding-bottom: 0.12em;
+    margin-bottom: -0.12em;
+  }
+  .split-word > span {
+    display: inline-block;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-.cosmic-glass-gold {
-  background: rgba(20, 16, 10, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(245, 196, 81, 0.25);
-}
-
-/* Subtle Glowing Accents */
-.glow-text-blue {
-  text-shadow: 0 0 20px rgba(49, 92, 255, 0.5);
-}
-
-.glow-text-violet {
-  text-shadow: 0 0 20px rgba(129, 60, 255, 0.5);
-}
-
-.glow-text-gold {
-  text-shadow: 0 0 20px rgba(245, 196, 81, 0.5);
-}
-
-/* Custom Scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #030308;
+  background: #04050b;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #17102E;
-  border-radius: 4px;
-  border: 1px solid rgba(129, 60, 255, 0.2);
+  background: #1a1f35;
+  border: 3px solid #04050b;
+  border-radius: 999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #813CFF;
+  background: #2c3456;
 }
-
-/* Cosmic Light Trail Gradient */
-.cosmic-gradient-border {
-  position: relative;
-}
-
-.cosmic-gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(49, 92, 255, 0.5), rgba(129, 60, 255, 0.3), rgba(245, 196, 81, 0.3));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-

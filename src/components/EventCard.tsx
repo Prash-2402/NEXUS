@@ -1,202 +1,90 @@
-import React from 'react';
-import { NexusEvent } from '../data/events';
-import { 
-  Terminal, 
-  Binary, 
-  Cpu, 
-  BookOpen, 
-  Trophy, 
-  Search, 
-  Palette, 
-  Mic, 
-  Theater, 
-  ArrowRight,
-  Info,
-  Gamepad2,
-  Users,
-  Lightbulb,
-  Calendar,
-  Clock,
-  MapPin,
-  UserCheck
-} from 'lucide-react';
+import type { PointerEvent } from 'react';
+import { ArrowUpRight, Clock, MapPin } from 'lucide-react';
+import { formatEventDates, formatEventTime, worlds, type NexusEvent } from '../data/events';
 
 interface EventCardProps {
   event: NexusEvent;
+  index: number;
   onOpenDetails: (event: NexusEvent) => void;
   onRegister: (event: NexusEvent) => void;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({
-  event,
-  onOpenDetails,
-  onRegister,
-}) => {
-  // Map icon name to Lucide component
-  const renderIcon = () => {
-    const props = { className: 'w-5 h-5' };
-    switch (event.iconName) {
-      case 'Terminal': return <Terminal {...props} />;
-      case 'Binary': return <Binary {...props} />;
-      case 'Cpu': return <Cpu {...props} />;
-      case 'BookOpen': return <BookOpen {...props} />;
-      case 'Trophy': return <Trophy {...props} />;
-      case 'Search': return <Search {...props} />;
-      case 'Palette': return <Palette {...props} />;
-      case 'Mic': return <Mic {...props} />;
-      case 'Theater': return <Theater {...props} />;
-      case 'Gamepad': return <Gamepad2 {...props} />;
-      case 'Users': return <Users {...props} />;
-      case 'Lightbulb': return <Lightbulb {...props} />;
-      default: return <Trophy {...props} />;
-    }
-  };
+export function EventCard({ event, index, onOpenDetails, onRegister }: EventCardProps) {
+  const world = worlds[event.world];
 
-  // Color schemes according to category
-  const getTheme = () => {
-    switch (event.category) {
-      case 'technical':
-        return {
-          cardBg: 'bg-[#090b1c]/80',
-          border: 'border-[#315CFF]/30 hover:border-[#315CFF]/80',
-          glow: 'hover:shadow-[0_0_30px_rgba(49,92,255,0.25)]',
-          iconBg: 'bg-[#315CFF]/15 text-[#38bdf8] border-[#315CFF]/40',
-          badgeBg: 'bg-[#315CFF]/15 text-[#93c5fd] border-[#315CFF]/30',
-          accent: '#315CFF',
-        };
-      case 'non-technical':
-        return {
-          cardBg: 'bg-[#0e0a20]/80',
-          border: 'border-[#813CFF]/30 hover:border-[#813CFF]/80',
-          glow: 'hover:shadow-[0_0_30px_rgba(129,60,255,0.25)]',
-          iconBg: 'bg-[#813CFF]/15 text-[#c084fc] border-[#813CFF]/40',
-          badgeBg: 'bg-[#813CFF]/15 text-[#d8b4fe] border-[#813CFF]/30',
-          accent: '#813CFF',
-        };
-      case 'cultural':
-        return {
-          cardBg: 'bg-[#150f14]/80',
-          border: 'border-[#F5C451]/30 hover:border-[#F5C451]/80',
-          glow: 'hover:shadow-[0_0_30px_rgba(245,196,81,0.2)]',
-          iconBg: 'bg-[#F5C451]/15 text-[#F5C451] border-[#F5C451]/40',
-          badgeBg: 'bg-[#F5C451]/15 text-[#fef08a] border-[#F5C451]/30',
-          accent: '#F5C451',
-        };
-    }
+  // Soft spotlight that follows the cursor.
+  const onMove = (e: PointerEvent<HTMLElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`);
   };
-
-  const theme = getTheme();
 
   return (
-    <div
-      className={`group relative rounded-2xl ${theme.cardBg} border ${theme.border} ${theme.glow} p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-md shadow-xl`}
+    <article
+      data-event-card
+      onPointerMove={onMove}
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-ink-900/80 p-6 backdrop-blur-md transition-[border-color,transform] duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-7"
+      style={{ ['--accent' as string]: world.color }}
     >
-      {/* Top Header */}
-      <div>
-        <div className="flex items-center justify-between gap-3 mb-5">
-          {/* Icon Badge */}
-          <div className={`w-11 h-11 rounded-xl ${theme.iconBg} border flex items-center justify-center transition-transform group-hover:scale-105 duration-300`}>
-            {renderIcon()}
-          </div>
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        style={{
+          background: `radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), ${world.color}1f, transparent 60%)`,
+        }}
+      />
+      <div className="absolute inset-x-0 top-0 h-px opacity-60" style={{ background: `linear-gradient(90deg, transparent, ${world.color}, transparent)` }} />
 
-          {/* Category & Badge */}
-          <div className="flex items-center gap-2">
-            {event.badge && (
-              <span className={`px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider border ${theme.badgeBg}`}>
-                {event.badge}
-              </span>
-            )}
-            <span className="text-[10px] uppercase tracking-wider text-[#A1A1B5] font-medium">
-              {event.category.replace('-', ' ')}
-            </span>
-          </div>
-        </div>
+      <div className="relative flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.16em]">
+        <span className="flex items-center gap-2" style={{ color: world.color }}>
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: world.color }} />
+          {world.title}
+        </span>
+        <span className="text-fg-faint">{String(index + 1).padStart(2, '0')}</span>
+      </div>
 
-        {/* Event Name */}
-        <h3 className="font-space text-2xl font-bold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-[#A1A1B5] transition-all">
-          {event.name}
-        </h3>
+      <h3 className="relative mt-6 font-display text-2xl font-semibold tracking-tight text-fg">{event.name}</h3>
+      <p className="relative mt-3 text-[15px] leading-relaxed text-fg-muted">{event.summary}</p>
 
-        {/* Short Description */}
-        <p className="mt-3 text-sm text-[#A1A1B5] leading-relaxed line-clamp-3">
-          {event.shortDescription || 'Event details coming soon.'}
-        </p>
-
-        {/* Event Key Meta Preview */}
-        <div className="mt-4 pt-3.5 border-t border-white/5 space-y-1.5 text-xs text-[#A1A1B5]">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5 text-[#F5C451] shrink-0" />
-            <span className="font-space font-medium text-[#F8FAFC] truncate">{event.date}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2 text-[11px]">
-            <span className="flex items-center gap-1.5 truncate">
-              <Clock className="w-3 h-3 text-[#38bdf8] shrink-0" />
-              <span className="truncate">{event.startTime}{event.endTime && event.endTime !== 'Details coming soon' ? ` - ${event.endTime}` : ''}</span>
-            </span>
-            <span className="flex items-center gap-1.5 truncate text-right">
-              <MapPin className="w-3 h-3 text-[#813CFF] shrink-0" />
-              <span className="truncate max-w-[120px]">{event.venue}</span>
-            </span>
-          </div>
-          {event.poc && (
-            <div className="flex items-center gap-1.5 text-[10px] text-[#A1A1B5]/80 pt-0.5">
-              <UserCheck className="w-3 h-3 text-[#38bdf8] shrink-0" />
-              <span className="truncate"><strong className="text-[#A1A1B5]">POC:</strong> {event.poc}</span>
-            </div>
+      <dl className="relative mt-6 space-y-2 border-t border-white/[0.06] pt-5 text-[13px] text-fg-muted">
+        <div className="flex items-center justify-between gap-4">
+          <dt className="sr-only">Date</dt>
+          <dd className="whitespace-nowrap font-display text-base font-medium text-fg">
+            {event.sessions.length ? formatEventDates(event) : 'Date to be announced'}
+          </dd>
+          {event.sessions.length > 0 && (
+            <>
+              <dt className="sr-only">Time</dt>
+              <dd className="flex items-center gap-1.5 text-right">
+                <Clock className="h-3.5 w-3.5 shrink-0 text-fg-faint" />
+                {formatEventTime(event)}
+              </dd>
+            </>
           )}
         </div>
+        <div className="flex items-start gap-1.5">
+          <dt className="sr-only">Venue</dt>
+          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fg-faint" />
+          <dd>{event.venue}</dd>
+        </div>
+      </dl>
 
-        {/* Mystery Surprise Arenas badge for NEXUS Olympics */}
-        {event.id === 'nexus-olympics' && (
-          <div className="mt-4 pt-4 border-t border-[#813CFF]/20 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#F5C451] uppercase tracking-wider flex items-center gap-1.5 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F5C451] animate-pulse" />
-              Surprise Arenas Revealed Live
-            </span>
-          </div>
-        )}
-
-        {/* Sub-activities preview (if any event has explicit subActivities) */}
-        {event.subActivities && event.subActivities.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-[#813CFF]/20">
-            <span className="text-[11px] font-semibold text-[#c084fc] uppercase tracking-wider block mb-2">
-              Featured Activities ({event.subActivities.length}):
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {event.subActivities.map((act) => (
-                <span
-                  key={act.id}
-                  className="px-2 py-0.5 rounded text-[11px] bg-[#030308]/60 text-[#e2e8f0] border border-[#813CFF]/25 font-mono"
-                >
-                  {act.name}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Action Footer */}
-      <div className="mt-7 pt-4 border-t border-white/5 flex items-center gap-3">
-        {/* View Details Button */}
+      <div className="relative mt-auto flex items-center gap-3 pt-7">
         <button
           onClick={() => onOpenDetails(event)}
-          className="flex-1 py-2.5 px-3.5 rounded-xl text-xs font-semibold uppercase tracking-wider text-[#F8FAFC] bg-[#030308]/80 hover:bg-[#17102E] border border-white/10 hover:border-white/30 transition-all flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#813CFF]"
+          className="flex-1 rounded-full border border-white/15 px-4 py-2.5 text-[13px] text-fg transition-colors hover:border-white/35 hover:bg-white/[0.04]"
+          aria-label={`View details for ${event.name}`}
         >
-          <Info className="w-3.5 h-3.5 text-[#A1A1B5]" />
           Details
         </button>
-
-        {/* Register Button */}
         <button
           onClick={() => onRegister(event)}
-          className="flex-1 py-2.5 px-3.5 rounded-xl text-xs font-semibold uppercase tracking-wider text-white bg-gradient-to-r from-[#315CFF] to-[#813CFF] hover:from-[#315CFF]/90 hover:to-[#F5C451]/90 transition-all duration-300 shadow-md shadow-[#813CFF]/20 flex items-center justify-center gap-1.5 group/btn focus:outline-none focus:ring-2 focus:ring-[#F5C451]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-fg px-4 py-2.5 text-[13px] font-medium text-ink-950 transition-all hover:bg-white hover:shadow-[0_0_30px_-6px_var(--accent)]"
+          aria-label={`Register for ${event.name}`}
         >
-          <span>Register</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+          Register
+          <ArrowUpRight className="h-3.5 w-3.5" />
         </button>
       </div>
-    </div>
+    </article>
   );
-};
-
+}

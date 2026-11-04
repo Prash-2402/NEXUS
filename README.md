@@ -1,102 +1,57 @@
-# NEXUS — AN AI UTSAV
-### Flagship Festival of CAADS | CHRIST (Deemed to be University), Bangalore
+# NEXUS 2026 · Where Worlds Converge
 
-An immersive, cinematic, galaxy-inspired digital experience designed for **NEXUS (23 November 2026 – 5 December 2026)**.
+Website for **NEXUS, An AI Utsav**, the flagship festival of CAADS at CHRIST (Deemed to be University), Kengeri Campus, Bangalore.
+**21 November – 5 December 2026.**
 
----
+## The experience
 
-## Creative Concept: "Different Worlds Converging Into One Universe"
+The background is a real-time 3D space journey (Three.js) driven by scroll:
 
-The frontend is architected around a 5-layer moving cosmic space environment:
-1. **Deep-Space Void:** Midnight-indigo (#030308, #090817, #17102E).
-2. **Distant & Mid Stars:** Procedural 3D perspective stars with multi-frequency twinkling and cosmic palette.
-3. **Cosmic Nebulae:** Breathing blue-violet procedural clouds with subtle drift.
-4. **Stardust Particles:** Near-field floating particles with mouse parallax and scroll momentum.
-5. **Hero Focal Point:** Luminous NEXUS typography, atmospheric glow, and live countdown capsule.
+| Section | What the camera does |
+| --- | --- |
+| Hero | Deep space; the NEXUS core glows far ahead |
+| About | Flies forward through the starfield, with warp streaks when you scroll fast |
+| Worlds | Passes three planets, one per world (pinned on laptops, stacked on phones) |
+| Events → Schedule | Heads for the core while the planets fall into orbit around it |
+| Register | The full system, slowly turning |
 
----
+It weighs about 125 KB gzipped, loads after the page is visible, lowers its resolution on slow devices,
+pauses in background tabs, stays still for visitors who prefer reduced motion, and falls back to a gradient without WebGL.
 
-## The Three Event Worlds & Complete Roster
+Scroll animations use GSAP ScrollTrigger: word-by-word headings, fade-ups, counters, the pinned Worlds section,
+the reel frame and the schedule timeline.
 
-### 1. World of Synthesis (Technical)
-- **Hackathon:** AI-driven innovation sprint.
-- **Cryptic Hunt:** Multi-layered cyber enigma and cipher decrypts.
-- **Reverse Engineering:** Systems deconstruction and binary analysis.
-- **Workshops:** Hands-on masterclasses in neural networks & computational intelligence.
+## Editing content (no component changes needed)
 
-### 2. World of Kinetic Strategy (Non-Technical)
-- **Sports:** Athletic arena tournaments.
-- **Murder Mystery:** Forensic simulation and deductive investigation.
-- **NEXUS Olympics (6-in-1 Decathlon):**
-  1. *Word Auction*
-  2. *Song Tuning*
-  3. *Family Feud*
-  4. *Spelling Bee*
-  5. *Go With the Flow*
-  6. *Dialogue-related Game* (Provisional title, easily editable)
+| What | Where |
+| --- | --- |
+| Tagline, dates, logos, contact links, nav | `src/config/site.ts` |
+| Google Form link for each event | `registration.eventForms` in `src/config/site.ts` |
+| Events: name, description, dates, times, venue, coordinators | `src/data/events.ts` |
+| Ceremonies (e.g. valedictory) | `ceremonies` in `src/data/events.ts` |
+| FAQ | `src/data/faq.ts` |
 
-### 3. World of Resonance (Cultural)
-- **Dance:** Choreographies merging rhythm and synchrony.
-- **Song:** Vocal power and melodic composition across genres.
-- **Talent Show:** Grand finale open arena for extraordinary arts.
+The schedule is generated from each event's `sessions`, so a date only needs changing in one place.
+An event with no sessions shows "Date to be announced".
 
----
+The scene reads `data-stage="<n>"` attributes on sections. If you reorder sections, keep the stages in order.
 
-## How To Maintain & Update (No Code Changes Needed)
-
-### 1. Update Global Metadata, Tagline & Event Google Forms
-Edit **`src/config/site.ts`**:
-- `tagline`: Update the official event tagline globally.
-- `registration.eventForms`: Paste the official Google Form URLs for each event:
-  - `hackathon`
-  - `cryptic-hunt`
-  - `reverse-engineering`
-  - `workshops`
-  - `sports`
-  - `murder-mystery`
-  - `nexus-olympics`
-  - `dance`
-  - `song`
-  - `talent-show`
-  Each event's "Register" button automatically opens its corresponding Google Form.
-- `media.promoVideoUrl`: Paste your official YouTube embed URL (e.g. `https://www.youtube.com/embed/VIDEO_ID`).
-- `socials.instagramUrl`: Update the official Instagram handle.
-- `socials.contactEmail`: Update official committee inbox.
-
-### 2. Update Event Details, Rules & Timings
-Edit **`src/data/events.ts`**:
-- When rules, venues, or timings are confirmed, replace the `"Details coming soon"` placeholders for any event.
-- If the provisional title for the Olympics dialogue game changes, edit `name` under `subActivities` of `nexus-olympics`.
-
-### 3. Update Official Logos & Assets
-Place image/SVG assets into `public/assets/`:
-- `public/assets/logos/nexus-icon.svg` — Event logo
-- `public/assets/logos/caads-logo.svg` — CAADS club logo
-- `public/assets/logos/christ-logo.svg` — CHRIST University logo
-
----
-
-## Development & Build Commands
+## Commands
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Start local development server
-npm run dev
-
-# 3. Build for production (outputs to /dist)
-npm run build
-
-# 4. Preview production build locally
+npm run dev       # http://localhost:3000
+npm run build     # static site in /dist
 npm run preview
 ```
 
----
+`/dist` can be deployed to any static host (Vercel, Netlify, Cloudflare Pages, GitHub Pages).
 
-## Deployment Ready
-The `/dist` directory contains a static, production-grade bundle compatible with:
-- **Vercel** (`vercel deploy`)
-- **Netlify** (drag and drop `/dist`)
-- **GitHub Pages**
-- **Cloudflare Pages**
+## Media
+
+- `public/media/og-image.jpg` is the link preview image.
+- `public/assets/planets/` holds the Earth (day, night lights, clouds), Jupiter, Saturn + ring, moon, sun and Milky Way textures from
+  [Solar System Scope](https://www.solarsystemscope.com/textures/) (CC BY 4.0, credited in the footer).
+  Laptops load the `-4k` files and phones the `-2k` ones. To swap a world's look, replace its file
+  (2:1 equirectangular image) and keep the name.
+- `_archive/` (git-ignored) holds the old 900-frame sequence, the original reel and the trimmed teaser (removed from the site for now).

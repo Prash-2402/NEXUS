@@ -1,16 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { NexusEvent } from '../data/events';
-import { 
-  X, 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Users, 
-  ShieldCheck, 
-  FileText, 
-  ArrowUpRight, 
-  Trophy
-} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowUpRight, X } from 'lucide-react';
+import { worlds, type NexusEvent } from '../data/events';
 
 interface EventDetailsModalProps {
   event: NexusEvent | null;
@@ -18,212 +8,131 @@ interface EventDetailsModalProps {
   onRegister: (event: NexusEvent) => void;
 }
 
-export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
-  event,
-  onClose,
-  onRegister,
-}) => {
-  const modalRef = useRef<HTMLDivElement | null>(null);
+const longDate = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 
-  // Close on Escape key press
+export function EventDetailsModal({ event, onClose, onRegister }: EventDetailsModalProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const [shown, setShown] = useState<NexusEvent | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  // Keep the last event mounted during the exit transition.
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
     if (event) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
+      setShown(event);
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      setVisible(false);
+      const t = setTimeout(() => setShown(null), 350);
+      return () => clearTimeout(t);
     }
+  }, [event]);
+
+  useEffect(() => {
+    if (!event) return;
+    const previous = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
     return () => {
-      document.body.style.overflow = 'auto';
-      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+      previous?.focus();
     };
   }, [event, onClose]);
 
-  if (!event) return null;
+  if (!shown) return null;
+  const world = worlds[shown.world];
 
-  const getCategoryColor = () => {
-    switch (event.category) {
-      case 'technical': return 'from-[#315CFF] to-[#17102E]';
-      case 'non-technical': return 'from-[#813CFF] to-[#17102E]';
-      case 'cultural': return 'from-[#F5C451] to-[#813CFF]';
-    }
-  };
+  const facts: Array<[string, React.ReactNode]> = [
+    [
+      shown.sessions.length > 1 ? 'Dates' : 'Date',
+      shown.sessions.length === 0
+        ? 'To be announced'
+        : shown.sessions.map((s) => (
+            <span key={s.date} className="block">
+              {longDate.format(new Date(`${s.date}T00:00:00Z`))}
+              {s.label && <span className="text-fg-faint"> · {s.label}</span>}
+            </span>
+          )),
+    ],
+    ['Time', shown.sessions[0]?.time ?? 'To be announced'],
+    ['Venue', shown.venue],
+    ['Format', shown.format],
+    ['Eligibility', shown.eligibility],
+    ...(shown.poc ? ([['Coordinators', shown.poc]] as Array<[string, React.ReactNode]>) : []),
+  ];
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-xl animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className={`fixed inset-0 z-[60] flex items-end justify-center bg-ink-950/70 backdrop-blur-md transition-opacity duration-300 sm:items-center sm:p-6 ${
+        visible ? 'opacity-100' : 'opacity-0'
+      }`}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="modal-title"
+      aria-labelledby="event-modal-title"
     >
       <div
-        ref={modalRef}
-        className="relative w-full max-w-2xl rounded-3xl bg-[#090817] border border-[#813CFF]/30 shadow-2xl overflow-hidden my-8 animate-in zoom-in-95 duration-200"
+        className={`relative max-h-[92svh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-white/10 bg-ink-900 shadow-2xl transition-all duration-500 ease-out sm:rounded-3xl ${
+          visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+        }`}
       >
-        {/* Modal Top Header Gradient */}
-        <div className={`h-3 w-full bg-gradient-to-r ${getCategoryColor()}`} />
+        <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${world.color}, transparent)` }} />
+        <div
+          className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[80%] -translate-x-1/2 rounded-full blur-3xl"
+          style={{ background: `${world.color}26` }}
+        />
 
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl bg-[#17102E]/70 hover:bg-[#813CFF]/30 text-[#A1A1B5] hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#813CFF]"
-          aria-label="Close details dialog"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Modal Content */}
-        <div className="p-6 sm:p-8 space-y-6">
-          {/* Category & Badge */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-[#813CFF]/20 text-[#d8b4fe] border border-[#813CFF]/30">
-              {event.category.replace('-', ' ')}
-            </span>
-            {event.badge && (
-              <span className="px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider bg-white/10 text-white border border-white/20">
-                {event.badge}
-              </span>
-            )}
+        <div className="relative p-6 sm:p-10">
+          <div className="flex items-start justify-between gap-6">
+            <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-label" style={{ color: world.color }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: world.color }} />
+              {world.title} · {world.worldName}
+            </p>
+            <button
+              ref={closeRef}
+              onClick={onClose}
+              className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 text-fg-muted transition-colors hover:border-white/30 hover:text-fg"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
-          {/* Event Name */}
-          <h2 id="modal-title" className="font-space text-3xl sm:text-4xl font-extrabold text-white">
-            {event.name}
-          </h2>
+          <h3 id="event-modal-title" className="mt-4 font-display text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+            {shown.name}
+          </h3>
+          <p className="mt-4 text-lg leading-relaxed text-fg">{shown.summary}</p>
+          <p className="mt-3 leading-relaxed text-fg-muted">{shown.description}</p>
 
-          {/* Description */}
-          <p className="text-sm sm:text-base text-[#A1A1B5] leading-relaxed">
-            {event.description || event.shortDescription || 'Event details coming soon.'}
-          </p>
+          <dl className="mt-8 grid gap-x-8 gap-y-5 border-t border-white/[0.07] pt-8 sm:grid-cols-2">
+            {facts.map(([k, v]) => (
+              <div key={k}>
+                <dt className="font-mono text-[10px] uppercase tracking-label text-fg-faint">{k}</dt>
+                <dd className="mt-1.5 text-[15px] text-fg">{v}</dd>
+              </div>
+            ))}
+          </dl>
 
-          {/* Surprise Challenge Notice for NEXUS Olympics */}
-          {event.id === 'nexus-olympics' && (
-            <div className="p-4 rounded-2xl bg-[#030308]/70 border border-[#813CFF]/30">
-              <span className="flex items-center gap-2 text-xs font-bold text-[#F5C451] uppercase tracking-wider mb-2 font-space">
-                <Trophy className="w-4 h-4" />
-                Classified Surprise Arenas
-              </span>
-              <p className="text-xs text-[#A1A1B5] leading-relaxed">
-                All internal challenge rounds and stage activities are classified surprises! Multi-stage arenas testing spontaneity, speed, and teamwork will be revealed live on the floor during the championship.
-              </p>
-            </div>
+          {shown.note && (
+            <p className="mt-8 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-sm leading-relaxed text-fg-muted">
+              {shown.note}
+            </p>
           )}
 
-          {/* Sub-activities if present */}
-          {event.subActivities && event.subActivities.length > 0 && (
-            <div className="p-4 rounded-2xl bg-[#030308]/60 border border-[#813CFF]/30">
-              <span className="flex items-center gap-2 text-xs font-bold text-[#F5C451] uppercase tracking-wider mb-3">
-                <Trophy className="w-4 h-4" />
-                Featured Activities ({event.subActivities.length})
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {event.subActivities.map((act) => (
-                  <div key={act.id} className="p-2.5 rounded-lg bg-[#090817] border border-white/5">
-                    <span className="font-space text-sm font-semibold text-white block">
-                      {act.name}
-                    </span>
-                    <span className="text-xs text-[#A1A1B5] block mt-0.5">
-                      {act.description}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Key Specifications Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div className="p-3.5 rounded-xl bg-[#17102E]/40 border border-white/5 flex items-start gap-3">
-              <Users className="w-4 h-4 text-[#38bdf8] mt-0.5" />
-              <div>
-                <span className="text-[11px] uppercase tracking-wider text-[#A1A1B5] block">Format</span>
-                <span className="text-sm font-medium text-white">{event.format || 'Details coming soon'}</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#17102E]/40 border border-white/5 flex items-start gap-3">
-              <ShieldCheck className="w-4 h-4 text-[#813CFF] mt-0.5" />
-              <div>
-                <span className="text-[11px] uppercase tracking-wider text-[#A1A1B5] block">Eligibility</span>
-                <span className="text-sm font-medium text-white">{event.eligibility || 'Details coming soon'}</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#17102E]/40 border border-white/5 flex items-start gap-3">
-              <Calendar className="w-4 h-4 text-[#F5C451] mt-0.5" />
-              <div>
-                <span className="text-[11px] uppercase tracking-wider text-[#A1A1B5] block">Date</span>
-                <span className="text-sm font-medium text-white">{event.date || 'Details coming soon'}</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#17102E]/40 border border-white/5 flex items-start gap-3">
-              <Clock className="w-4 h-4 text-[#38bdf8] mt-0.5" />
-              <div>
-                <span className="text-[11px] uppercase tracking-wider text-[#A1A1B5] block">Time</span>
-                <span className="text-sm font-medium text-white">
-                  {event.startTime !== 'Details coming soon' ? `${event.startTime} - ${event.endTime}` : 'Details coming soon'}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#17102E]/40 border border-white/5 flex items-start gap-3 sm:col-span-2">
-              <MapPin className="w-4 h-4 text-[#813CFF] mt-0.5" />
-              <div>
-                <span className="text-[11px] uppercase tracking-wider text-[#A1A1B5] block">Venue</span>
-                <span className="text-sm font-medium text-white">{event.venue || 'Details coming soon'}</span>
-              </div>
-            </div>
-
-            {event.poc && (
-              <div className="p-3.5 rounded-xl bg-[#17102E]/40 border border-[#315CFF]/30 flex items-start gap-3 sm:col-span-2">
-                <Users className="w-4 h-4 text-[#38bdf8] mt-0.5" />
-                <div>
-                  <span className="text-[11px] uppercase tracking-wider text-[#38bdf8] font-semibold block">Event POC (Organizers)</span>
-                  <span className="text-sm font-medium text-white">{event.poc}</span>
-                </div>
-              </div>
-            )}
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <button onClick={() => onRegister(shown)} className="btn-primary flex-1">
+              Register for {shown.name}
+              <ArrowUpRight className="h-4 w-4" />
+            </button>
+            <button onClick={onClose} className="btn-ghost sm:w-auto">
+              Close
+            </button>
           </div>
-
-          {/* Rules & Guidelines Notice */}
-          <div className="p-4 rounded-xl bg-[#030308]/60 border border-white/10 flex items-start gap-3">
-            <FileText className="w-4 h-4 text-[#A1A1B5] mt-0.5 shrink-0" />
-            <div className="text-xs text-[#A1A1B5] leading-relaxed">
-              <strong className="text-white block font-medium mb-1">Participation Rules &amp; Rubrics:</strong>
-              {event.rulesPlaceholder || 'Official rulebook, scoring criteria, and reporting guidelines will be published by the organizing committee prior to the event.'}
-            </div>
-          </div>
-
-          {/* Dedicated Event Registration Action Bar */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10">
-            <span className="text-xs text-[#A1A1B5] text-center sm:text-left">
-              Official Google Form for {event.name} will open in a new tab.
-            </span>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button
-                onClick={onClose}
-                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider text-[#A1A1B5] hover:text-white bg-[#030308] border border-white/10 transition-colors"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => onRegister(event)}
-                className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider text-white bg-gradient-to-r from-[#315CFF] via-[#813CFF] to-[#F5C451] hover:opacity-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#813CFF]/30"
-              >
-                <span>Register for {event.name}</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+          <p className="mt-4 text-center text-xs text-fg-faint sm:text-left">Registration opens in a new tab.</p>
         </div>
       </div>
     </div>
   );
-};
-
+}

@@ -29,3 +29,6 @@ Thumbs.db
 *.sln
 *.sw?
 
+
+# Old frame sequence and original reel, kept locally only
+/_archive/

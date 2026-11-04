@@ -6,24 +6,19 @@ export default defineConfig({
   server: {
     port: 3000,
     open: false,
-    watch: {
-      usePolling: true,
-      interval: 1000,
-      ignored: ['**/frames/**', '**/dist/**'],
-    },
   },
   build: {
     outDir: 'dist',
+    emptyOutDir: true,
     sourcemap: false,
+    target: 'es2019',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          three: ['three'],
-          animation: ['framer-motion', 'gsap'],
-          icons: ['lucide-react']
-        }
-      }
-    }
-  }
+          gsap: ['gsap'],
+        },
+      },
+    },
+  },
 });

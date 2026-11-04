@@ -1,152 +1,124 @@
-import React from 'react';
+import { useRef } from 'react';
+import { ArrowDown, ArrowRight } from 'lucide-react';
 import { siteConfig } from '../config/site';
 import { useCountdown } from '../hooks/useCountdown';
-import { Compass, ChevronDown, Calendar } from 'lucide-react';
+import { gsap, useGsap } from '../lib/motion';
 
 interface HeroProps {
   onRegisterClick: () => void;
   onExploreClick: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onRegisterClick, onExploreClick }) => {
+const pad = (n: number) => String(n).padStart(2, '0');
+
+export function Hero({ onRegisterClick, onExploreClick }: HeroProps) {
+  const ref = useRef<HTMLElement>(null);
   const countdown = useCountdown(siteConfig.dates.startDate, siteConfig.dates.endDate);
 
+  useGsap(ref, () => {
+    // Intro
+    const tl = gsap.timeline({ delay: 0.15 });
+    tl.from('[data-hero="logo"]', { autoAlpha: 0, scale: 0.92, filter: 'blur(14px)', duration: 1.8 })
+      .from('[data-hero="eyebrow"]', { autoAlpha: 0, y: 12, duration: 1 }, 0.4)
+      .from('[data-hero="tagline"] .split-word > span', { yPercent: 115, duration: 1.2, stagger: 0.08 }, 0.7)
+      .from('[data-hero="fade"]', { autoAlpha: 0, y: 18, duration: 1.1, stagger: 0.1 }, 1.0);
+
+    // Drift away as the journey begins
+    gsap.to('[data-hero="content"]', {
+      yPercent: -18,
+      autoAlpha: 0,
+      scale: 0.96,
+      ease: 'none',
+      scrollTrigger: { trigger: ref.current, start: 'top top', end: 'bottom 20%', scrub: true },
+    });
+    gsap.to('[data-hero="cue"]', {
+      autoAlpha: 0,
+      ease: 'none',
+      scrollTrigger: { trigger: ref.current, start: 'top top', end: '15% top', scrub: true },
+    });
+  });
+
+  const units = [
+    { label: 'Days', value: countdown.days },
+    { label: 'Hours', value: countdown.hours },
+    { label: 'Minutes', value: countdown.minutes },
+    { label: 'Seconds', value: countdown.seconds },
+  ];
+
   return (
-    <section
-      id="hero"
-      className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pt-28 sm:pt-36 pb-16 overflow-hidden"
-    >
-      {/* Subtle Atmospheric Light Behind Hero */}
-      <div
-        className="absolute w-[320px] sm:w-[550px] md:w-[750px] h-[320px] sm:h-[400px] md:h-[500px] rounded-full pointer-events-none filter blur-[100px] sm:blur-[140px] opacity-20 -z-10"
-        style={{
-          background:
-            'radial-gradient(circle, #813CFF 0%, #315CFF 45%, #F5C451 75%, transparent 100%)',
-        }}
-      />
-
-      <div className="max-w-5xl mx-auto w-full flex flex-col items-center text-center z-10">
-        
-        {/* Small Uppercase Event Identity */}
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <span className="h-px w-8 sm:w-16 bg-gradient-to-r from-transparent to-[#315CFF]" />
-          <span className="text-xs sm:text-sm font-space uppercase tracking-[0.35em] text-[#38bdf8] font-semibold">
-            {siteConfig.eventIdentity}
-          </span>
-          <span className="h-px w-8 sm:w-16 bg-gradient-to-l from-transparent to-[#813CFF]" />
-        </div>
-
-        {/* Hero Title Focal Point: Official NEXUS Orbital Glass Logo */}
-        <div className="relative my-4 sm:my-8 w-full flex flex-col items-center justify-center">
-          <div className="relative w-full max-w-4xl lg:max-w-5xl px-2 sm:px-4 flex items-center justify-center">
-            {/* Luminous Cosmic Aura Behind Logo */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#315CFF]/30 via-[#813CFF]/45 to-[#F5C451]/25 filter blur-3xl rounded-full opacity-80 pointer-events-none -z-10 scale-105" />
-            
-            {/* Orbital Glass Logo Image */}
-            <img
-              src={siteConfig.branding.nexusLogo}
-              alt="NEXUS"
-              className="w-full h-auto max-h-[200px] sm:max-h-[280px] md:max-h-[360px] lg:max-h-[420px] object-contain filter drop-shadow-[0_0_50px_rgba(129,60,255,0.65)] select-none transition-transform duration-700 hover:scale-[1.02]"
-            />
-          </div>
-          <h1 className="sr-only">NEXUS — An AI Utsav</h1>
-        </div>
-
-        {/* Central Concept & Official Tagline Placeholder */}
-        <p className="mt-2 text-base sm:text-lg md:text-xl font-medium text-[#F8FAFC]/90 max-w-2xl mx-auto leading-relaxed">
-          {siteConfig.tagline}
-        </p>
-        <p className="mt-1 text-xs sm:text-sm text-[#A1A1B5] italic font-light tracking-wide">
-          "{siteConfig.conceptIdea}"
+    <section ref={ref} id="hero" data-stage="0" className="relative z-10 flex min-h-[100svh] items-center pb-24 pt-28">
+      <div data-hero="content" className="container-site flex flex-col items-center text-center">
+        <p data-hero="eyebrow" className="chip">
+          <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+          {siteConfig.organizingClub} presents · {siteConfig.eventIdentity}
         </p>
 
-        {/* Dates Badge */}
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm text-[#F8FAFC]">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#090817]/80 border border-[#315CFF]/30 backdrop-blur-sm">
-            <Calendar className="w-4 h-4 text-[#38bdf8]" />
-            <span className="font-medium">{siteConfig.dates.display}</span>
-          </div>
-        </div>
+        <h1 className="sr-only">
+          {siteConfig.eventName}, {siteConfig.eventIdentity}. {siteConfig.tagline}.
+        </h1>
+        <img
+          data-hero="logo"
+          src={siteConfig.branding.nexusLogo}
+          alt=""
+          width={1200}
+          height={393}
+          className="mt-8 w-[min(90vw,780px)] select-none drop-shadow-[0_0_60px_rgba(110,150,255,0.35)]"
+          draggable={false}
+        />
 
-        {/* Live Countdown Capsule */}
-        <div className="mt-6 w-full max-w-md">
-          <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-[#090817]/90 via-[#17102E]/80 to-[#090817]/90 border border-[#813CFF]/30 shadow-2xl backdrop-blur-md">
-            <div className="flex items-center justify-between text-xs text-[#A1A1B5] mb-2 px-1">
-              <span className="flex items-center gap-1.5 uppercase tracking-wider font-semibold text-[#F8FAFC]">
-                <span className="w-2 h-2 rounded-full bg-[#F5C451] animate-pulse" />
-                Cosmic Launch Status
+        <p data-hero="tagline" className="mt-6 font-display text-2xl font-medium tracking-tight text-fg sm:mt-8 sm:text-4xl" aria-hidden="true">
+          {siteConfig.tagline.split(' ').map((w, i, all) => (
+            <span key={i}>
+              <span className="split-word">
+                <span className={i === all.length - 1 ? 'text-gradient' : ''}>{w}</span>
               </span>
-              <span className="text-[11px] text-[#A1A1B5]">Asia/Kolkata (IST)</span>
-            </div>
+              {i < all.length - 1 && ' '}
+            </span>
+          ))}
+        </p>
 
-            {countdown.status === 'upcoming' ? (
-              <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="p-2 rounded-lg bg-[#030308]/70 border border-[#315CFF]/20">
-                  <span className="block font-space text-lg sm:text-xl font-bold text-white">
-                    {countdown.days}
-                  </span>
-                  <span className="text-[10px] uppercase text-[#A1A1B5]">Days</span>
-                </div>
-                <div className="p-2 rounded-lg bg-[#030308]/70 border border-[#813CFF]/20">
-                  <span className="block font-space text-lg sm:text-xl font-bold text-white">
-                    {countdown.hours}
-                  </span>
-                  <span className="text-[10px] uppercase text-[#A1A1B5]">Hours</span>
-                </div>
-                <div className="p-2 rounded-lg bg-[#030308]/70 border border-[#813CFF]/20">
-                  <span className="block font-space text-lg sm:text-xl font-bold text-white">
-                    {countdown.minutes}
-                  </span>
-                  <span className="text-[10px] uppercase text-[#A1A1B5]">Mins</span>
-                </div>
-                <div className="p-2 rounded-lg bg-[#030308]/70 border border-[#F5C451]/20">
-                  <span className="block font-space text-lg sm:text-xl font-bold text-[#F5C451]">
-                    {countdown.seconds}
-                  </span>
-                  <span className="text-[10px] uppercase text-[#A1A1B5]">Secs</span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-2 text-sm font-semibold text-[#F5C451]">
-                {countdown.formattedString}
-              </div>
-            )}
-          </div>
-        </div>
+        <p data-hero="fade" className="mt-4 font-mono text-[11px] uppercase tracking-label text-fg-muted sm:text-xs">
+          <span className="block sm:inline">{siteConfig.dates.display}</span>
+          <span className="mx-3 hidden text-fg-faint sm:inline">/</span>
+          <span className="mt-1 block sm:mt-0 sm:inline">{siteConfig.campus}</span>
+        </p>
 
-        {/* Primary and Secondary Call-To-Action Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
-          {/* Primary CTA: EXPLORE EVENTS */}
-          <button
-            onClick={onExploreClick}
-            className="w-full sm:w-auto px-7 py-3 rounded-xl font-space font-semibold text-sm tracking-wider uppercase text-white bg-gradient-to-r from-[#315CFF] via-[#813CFF] to-[#813CFF] hover:from-[#315CFF]/90 hover:to-[#F5C451]/90 transition-all duration-300 shadow-lg shadow-[#813CFF]/30 flex items-center justify-center gap-2 group focus:outline-none focus:ring-2 focus:ring-[#813CFF] focus:ring-offset-2 focus:ring-offset-[#030308]"
-          >
-            <Compass className="w-4 h-4 group-hover:rotate-45 transition-transform" />
-            EXPLORE EVENTS
+        <div data-hero="fade" className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+          <button onClick={onExploreClick} className="btn-primary w-full sm:w-auto">
+            Explore events
+            <ArrowRight className="h-4 w-4" />
           </button>
-
-          {/* Secondary CTA: REGISTER NOW */}
-          <button
-            onClick={onRegisterClick}
-            className="w-full sm:w-auto px-7 py-3 rounded-xl font-space font-semibold text-sm tracking-wider uppercase text-[#F8FAFC] bg-[#090817] hover:bg-[#17102E] border border-[#813CFF]/40 hover:border-[#F5C451]/70 transition-all duration-300 flex items-center justify-center gap-2 group focus:outline-none focus:ring-2 focus:ring-[#F5C451] focus:ring-offset-2 focus:ring-offset-[#030308]"
-          >
-            REGISTER NOW
+          <button onClick={onRegisterClick} className="btn-ghost w-full sm:w-auto">
+            Register now
           </button>
         </div>
 
-        {/* Scroll Down Indicator */}
-        <div className="mt-10 flex flex-col items-center gap-1.5 text-xs text-[#A1A1B5]">
-          <span className="uppercase tracking-[0.2em] text-[10px]">Explore The Nexus Universe</span>
-          <a
-            href="#about"
-            className="p-1 rounded-full border border-[#813CFF]/20 text-[#A1A1B5] hover:text-white hover:border-[#813CFF]/50 transition-all animate-bounce"
-            aria-label="Scroll down to About section"
-          >
-            <ChevronDown className="w-4 h-4" />
-          </a>
+        <div data-hero="fade" className="mt-12 sm:mt-14" aria-live="off">
+          {countdown.status === 'upcoming' ? (
+            <dl className="flex items-stretch divide-x divide-white/10" aria-label="Countdown to NEXUS">
+              {units.map((u) => (
+                <div key={u.label} className="px-4 text-center sm:px-7">
+                  <dd className="font-display text-3xl font-medium tabular-nums text-fg sm:text-4xl">{pad(u.value)}</dd>
+                  <dt className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-fg-faint">{u.label}</dt>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="chip border-gold/40 text-gold">{countdown.formattedString}</p>
+          )}
         </div>
-
       </div>
+
+      <a
+        data-hero="cue"
+        href="#about"
+        className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 [@media(min-height:860px)]:flex flex-col items-center gap-3 font-mono text-[10px] uppercase tracking-label text-fg-faint transition-colors hover:text-fg"
+      >
+        Scroll to begin
+        <span className="flex h-9 w-6 items-start justify-center rounded-full border border-white/20 p-1.5">
+          <ArrowDown className="h-3 w-3 animate-bounce" />
+        </span>
+      </a>
     </section>
   );
-};
+}
