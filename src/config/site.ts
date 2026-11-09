@@ -77,8 +77,8 @@ export const siteConfig: SiteConfig = {
     },
   },
   socials: {
-    instagramUrl: 'https://instagram.com/caads_christ',
-    instagramHandle: '@caads_christ',
+    instagramUrl: 'https://www.instagram.com/caads.adse/',
+    instagramHandle: '@caads.adse',
     contactEmail: 'caads@christuniversity.in',
     websiteUrl: 'https://nexus.christuniversity.in',
   },

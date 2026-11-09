@@ -327,12 +327,10 @@ void main() {
   vec2 c = vUv - 0.5;
   float d = length(c);
   float core = exp(-d * d * 260.0);
-  float halo = exp(-d * d * 30.0) * 0.4;
-  float ang = atan(c.y, c.x);
-  float rays = pow(abs(sin(ang * 2.0 + uTime * 0.05)), 40.0) * exp(-d * 7.0) * 0.5;
-  rays += pow(abs(cos(ang * 2.0 - uTime * 0.04)), 60.0) * exp(-d * 9.0) * 0.35;
-  vec3 col = uHot * core + uColor * (halo + rays);
-  float a = (core + halo + rays) * uIntensity;
+  // Plain round glow (no star-shaped rays)
+  float halo = exp(-d * d * 30.0) * 0.4 + exp(-d * d * 90.0) * 0.25;
+  vec3 col = uHot * core + uColor * halo;
+  float a = (core + halo) * uIntensity;
   gl_FragColor = vec4(col * uIntensity, clamp(a, 0.0, 1.0));
 }
 `;
