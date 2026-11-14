@@ -41,6 +41,7 @@ import {
   streakFragment,
   streakVertex,
 } from './shaders';
+import { CH } from '../launch/timeline';
 
 /**
  * Scroll-driven space journey.
@@ -98,6 +99,39 @@ const ORBIT_TILT = 0.32;
 const KEY_LIGHT = new Vector3(-0.85, 0.4, 0.45).normalize();
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** Everything one frame needs; the scroll journey and the launch sequence each produce one and they blend. */
+class FrameState {
+  pos = new Vector3();
+  look = new Vector3();
+  stage = 0;
+  warp = 0;
+  stretch = 0;
+  appear = 0;
+  converge = 0;
+  core = 0.5;
+  coreScale = 1;
+  fov = 50;
+  shake = 0;
+  orbitScale = 1;
+
+  mix(o: FrameState, b: number) {
+    this.pos.lerp(o.pos, b);
+    this.look.lerp(o.look, b);
+    this.stage = lerp(this.stage, o.stage, b);
+    this.warp = lerp(this.warp, o.warp, b);
+    this.stretch = lerp(this.stretch, o.stretch, b);
+    this.appear = lerp(this.appear, o.appear, b);
+    this.converge = lerp(this.converge, o.converge, b);
+    this.core = lerp(this.core, o.core, b);
+    this.coreScale = lerp(this.coreScale, o.coreScale, b);
+    this.fov = lerp(this.fov, o.fov, b);
+    this.shake = lerp(this.shake, o.shake, b);
+    this.orbitScale = lerp(this.orbitScale, o.orbitScale, b);
+  }
+}
+
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const range = (a: number, b: number, t: number) => clamp01((t - a) / (b - a));
 
@@ -143,6 +177,14 @@ export class SpaceEngine {
 
   private tmpPos = new Vector3();
   private tmpLook = new Vector3();
+  private frame = new FrameState();
+  private launchFrameState = new FrameState();
+  private baseFov = 50;
+
+  /** Launch sequence: seconds since ignition (negative during the countdown), or null when not running. */
+  private launchT: number | null = null;
+  private launchClock = 0;
+  private launchBlend = 0;
 
   constructor(canvas: HTMLCanvasElement, options: EngineOptions) {
     this.reducedMotion = options.reducedMotion;
@@ -624,7 +666,8 @@ export class SpaceEngine {
     const aspect = w / h;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = aspect;
-    this.camera.fov = aspect < 0.8 ? 68 : aspect < 1.2 ? 58 : 50;
+    this.baseFov = aspect < 0.8 ? 68 : aspect < 1.2 ? 58 : 50;
+    this.camera.fov = this.baseFov;
     this.camera.updateProjectionMatrix();
     this.nebula.uniforms.uAspect.value = aspect;
     this.layoutForAspect(aspect);
@@ -708,6 +751,146 @@ export class SpaceEngine {
     this.focusWorld = e.detail;
   }
 
+  /* ---------------- Launch sequence ---------------- */
+
+  /**
+   * Drive the scene from the launch timeline instead of the scroll position.
+   * `t` is seconds since ignition; negative values are the countdown. Pass null
+   * to hand control back to the scroll journey (the scene blends out over ~2s).
+   */
+  setLaunch(t: number | null) {
+    if (t !== null) this.launchClock = t;
+    this.launchT = t;
+  }
+
+  /** Camera for a journey keyframe, as fresh vectors. */
+  private camAt(s: number) {
+    this.sampleCamera(s);
+    return { pos: this.tmpPos.clone(), look: this.tmpLook.clone() };
+  }
+
+  private launchFrame(t: number, time: number, out: FrameState) {
+    const f = out;
+    f.warp = 0;
+    f.stretch = 0;
+    f.appear = 0;
+    f.converge = 0;
+    f.coreScale = 1;
+    f.fov = this.baseFov;
+    f.shake = 0;
+    f.orbitScale = 1;
+    f.core = 0.5 + Math.sin(time * 1.3) * 0.03;
+
+    // The system as seen in the finale, looking a little higher so it sits under the text.
+    const arr = this.camAt(5.2);
+    arr.pos.y += 2;
+    arr.look.y += 13;
+
+    // Countdown: slow creep forward while the core wakes up.
+    if (t < 0) {
+      const pre = clamp01(1 + t / 10);
+      f.pos.set(0, 0.6, 70 - pre * 25);
+      f.look.set(0, 0, -60);
+      f.stage = -0.6;
+      f.core = 0.5 + pre * 0.9 + Math.sin(time * (2 + pre * 10)) * 0.08 * pre;
+      f.coreScale = 1 + pre * 0.4;
+      f.shake = pre * pre * 0.12;
+      return;
+    }
+
+    // Ignition: flare, shake, streaks begin.
+    if (t < CH.warp) {
+      const u = t / CH.warp;
+      f.pos.set(0, 0.6, 45 - u * 15);
+      f.look.set(0, 0, -60);
+      f.stage = -0.6;
+      f.core = 4.2 - u * 2.6;
+      f.coreScale = 2.6 - u * 0.8;
+      f.shake = 1.1 * (1 - u) + 0.25;
+      f.warp = smooth(u);
+      f.stretch = smooth(u) * 34;
+      f.fov = this.baseFov + u * 6;
+      return;
+    }
+
+    // Warp: full speed, braking in the last second and a half.
+    const driftStartZ = -20;
+    if (t < CH.institution) {
+      const u = (t - CH.warp) / (CH.institution - CH.warp);
+      const brake = range(0.75, 1, u);
+      const z = lerp(30, driftStartZ, smooth(u));
+      f.pos.set(Math.sin(time * 2.3) * 0.15, 0.6 + Math.cos(time * 1.7) * 0.15, z);
+      f.look.set(0, 0, z - 120);
+      f.stage = lerp(-0.6, 1, u);
+      f.core = 1.6 - brake * 0.9;
+      f.coreScale = 1.8 - brake * 0.8;
+      f.shake = 0.18 * (1 - brake);
+      f.warp = 1 - brake;
+      f.stretch = 34 * (1 - brake);
+      f.fov = this.baseFov + 10 * (1 - brake);
+      return;
+    }
+
+    // Institution: a slow drift through the nebula behind the logo cards.
+    const driftEndZ = -70;
+    if (t < CH.worlds) {
+      const u = (t - CH.institution) / (CH.worlds - CH.institution);
+      const z = lerp(driftStartZ, driftEndZ, u);
+      f.pos.set(Math.sin(time * 0.2) * 0.8, 0.6 + Math.cos(time * 0.17) * 0.5, z);
+      f.look.set(0, 0, z - 120);
+      f.stage = lerp(1, 1.2, u);
+      return;
+    }
+
+    // Worlds: fly past each planet, two seconds of travel then a hold.
+    const worldCams = [this.camAt(2.25), this.camAt(2.5), this.camAt(2.75)];
+    if (t < CH.converge) {
+      const local = t - CH.worlds;
+      const i = Math.min(2, Math.floor(local / CH.worldDur));
+      const travel = clamp01((local - i * CH.worldDur) / 2.4);
+      const u = smooth(travel);
+      const from = i === 0 ? { pos: new Vector3(0, 0.6, driftEndZ), look: new Vector3(0, 0, driftEndZ - 120) } : worldCams[i - 1];
+      const to = worldCams[i];
+      f.pos.copy(from.pos).lerp(to.pos, u);
+      f.look.copy(from.look).lerp(to.look, u);
+      f.pos.x += Math.sin(time * 0.3) * 0.25;
+      f.pos.y += Math.cos(time * 0.23) * 0.2;
+      f.stage = [2.25, 2.5, 2.75][i];
+      f.appear = i === 0 ? smooth(clamp01(local / 1.5)) : 1;
+      f.warp = i === 0 ? 0 : Math.sin(travel * Math.PI) * 0.3;
+      f.stretch = f.warp * 22;
+      return;
+    }
+
+    // Convergence: pull back to watch the planets fall into orbit.
+    if (t < CH.dates) {
+      const u = (t - CH.converge) / (CH.dates - CH.converge);
+      const mid = this.camAt(3.4);
+      const a = smooth(range(0, 0.4, u));
+      const b = smooth(range(0.35, 1, u));
+      f.pos.copy(worldCams[2].pos).lerp(mid.pos, a).lerp(arr.pos, b);
+      f.look.copy(worldCams[2].look).lerp(mid.look, a).lerp(arr.look, b);
+      f.stage = lerp(2.75, 5.2, u);
+      f.appear = 1;
+      f.converge = smooth(range(0.15, 0.9, u));
+      f.core = 0.5 + f.converge * 0.4 + Math.sin(time * 1.3) * 0.04;
+      return;
+    }
+
+    // Dates and logo: hold on the system, slowly circling it; a pulse on the reveal hit.
+    const hold = t - CH.dates;
+    const orbit = Math.sin(hold * 0.12) * 7;
+    f.pos.copy(arr.pos).add(new Vector3(orbit, Math.sin(hold * 0.18) * 0.6, -hold * 0.35));
+    f.look.copy(arr.look);
+    f.stage = 5.2;
+    f.appear = 1;
+    f.converge = 1;
+    const hit = t > CH.hit ? Math.exp(-(t - CH.hit) * 2.5) : 0;
+    f.core = 0.9 + Math.sin(time * 1.3) * 0.04 + hit * 1.4;
+    f.coreScale = 1 + hit * 0.5;
+    f.shake = hit * 0.35;
+  }
+
   /* ---------------- Frame ---------------- */
 
   private sampleCamera(s: number) {
@@ -767,39 +950,76 @@ export class SpaceEngine {
     this.lastStage = s;
     this.velocity += (rawVel - this.velocity) * Math.min(1, dt * 6);
 
-    // Camera
-    this.sampleCamera(s);
     this.pointer.x += (this.pointer.tx - this.pointer.x) * Math.min(1, dt * 2);
     this.pointer.y += (this.pointer.ty - this.pointer.y) * Math.min(1, dt * 2);
     const sway = this.reducedMotion ? 0 : 1;
-    this.camera.position.set(
+
+    // The scroll journey's frame
+    const f = this.frame;
+    this.sampleCamera(s);
+    f.pos.set(
       this.tmpPos.x + this.pointer.x * 1.2 * sway + Math.sin(time * 0.15) * 0.3 * sway,
       this.tmpPos.y - this.pointer.y * 0.8 * sway + Math.cos(time * 0.12) * 0.2 * sway,
       this.tmpPos.z,
     );
-    this.camera.lookAt(this.tmpLook);
+    f.look.copy(this.tmpLook);
+    f.stage = s;
+    const travel = 1 - range(3.2, 4, s);
+    const speed = Math.abs(this.velocity);
+    f.warp = this.reducedMotion ? 0 : clamp01(speed * 0.9) * travel;
+    f.stretch = Math.sign(this.velocity) * Math.min(speed * 26, 34);
+    f.converge = smooth(range(3.0, 4.5, s));
+    f.appear = smooth(range(1.25, 1.9, s));
+    f.core = 0.5 + f.converge * 0.25 + Math.sin(time * 1.3) * 0.03;
+    f.coreScale = 1;
+    f.fov = this.baseFov;
+    f.shake = 0;
+    f.orbitScale = 1;
+
+    // The launch sequence takes over completely, then blends back to the scroll journey.
+    if (this.launchT !== null) {
+      this.launchBlend = 1;
+    } else if (this.launchBlend > 0) {
+      this.launchClock += dt;
+      this.launchBlend = Math.max(0, this.launchBlend - dt * 0.55);
+    }
+    if (this.launchBlend > 0.0001) {
+      this.launchFrame(this.launchClock, time, this.launchFrameState);
+      f.mix(this.launchFrameState, smooth(this.launchBlend));
+    }
+
+    // Camera
+    const shake = this.reducedMotion ? 0 : f.shake;
+    this.camera.position.set(
+      f.pos.x + (Math.random() - 0.5) * shake,
+      f.pos.y + (Math.random() - 0.5) * shake,
+      f.pos.z + (Math.random() - 0.5) * shake * 0.5,
+    );
+    this.camera.lookAt(f.look);
+    if (Math.abs(this.camera.fov - f.fov) > 0.01) {
+      this.camera.fov = f.fov;
+      this.camera.updateProjectionMatrix();
+    }
 
     // Background + stars
     this.nebula.uniforms.uTime.value = time;
-    this.nebula.uniforms.uStage.value = s;
-    this.nebula.uniforms.uLook.value = [this.pointer.x * 0.05 + s * 0.04, -this.pointer.y * 0.04];
+    this.nebula.uniforms.uStage.value = f.stage;
+    this.nebula.uniforms.uLook.value = [this.pointer.x * 0.05 + f.stage * 0.04, -this.pointer.y * 0.04];
     this.stars.uniforms.uTime.value = time;
 
-    // Warp streaks scale with forward speed through the starfield
-    const travel = 1 - range(3.2, 4, s);
-    const speed = Math.abs(this.velocity);
-    const warp = this.reducedMotion ? 0 : clamp01(speed * 0.9) * travel;
-    this.streaks.uniforms.uOpacity.value = warp * 0.75;
-    this.streaks.uniforms.uStretch.value = Math.sign(this.velocity) * Math.min(speed * 26, 34);
+    // Warp streaks
+    this.streaks.uniforms.uOpacity.value = f.warp * 0.75;
+    this.streaks.uniforms.uStretch.value = f.stretch;
 
     // Planets drift from their fly-by spots into orbit around the core
-    const converge = smooth(range(3.0, 4.5, s));
-    const appear = smooth(range(1.25, 1.9, s));
+    const converge = f.converge;
+    const appear = f.appear;
     this.planets.forEach((p, i) => {
       const angle = p.orbitPhase + time * p.orbitSpeed * (0.25 + converge * 0.75);
-      const ox = Math.cos(angle) * p.orbitRadius;
-      const oz = Math.sin(angle) * p.orbitRadius;
-      const orbit = new Vector3(ox, 0, oz).applyAxisAngle(new Vector3(1, 0, 0), ORBIT_TILT).add(CORE);
+      const r = p.orbitRadius * f.orbitScale;
+      const orbit = new Vector3(Math.cos(angle) * r, 0, Math.sin(angle) * r)
+        .applyAxisAngle(new Vector3(1, 0, 0), ORBIT_TILT)
+        .add(CORE);
       const lift = Math.sin(converge * Math.PI) * (6 + i * 3);
       p.group.position.lerpVectors(p.base, orbit, converge);
       p.group.position.y += lift;
@@ -848,13 +1068,13 @@ export class SpaceEngine {
     });
 
     // Core and orbit guides
-    const coreIntensity = 0.5 + converge * 0.25 + Math.sin(time * 1.3) * 0.03;
-    this.coreGlowMat.uniforms.uIntensity.value = coreIntensity;
+    this.coreGlowMat.uniforms.uIntensity.value = f.core;
     this.coreGlowMat.uniforms.uTime.value = time;
-    this.coreBody.uniforms.uIntensity.value = converge;
+    this.coreGlow.scale.setScalar(f.coreScale);
+    this.coreBody.uniforms.uIntensity.value = Math.max(converge, clamp01(f.core - 0.6));
     this.coreGlow.quaternion.copy(this.camera.quaternion);
     this.orbitGroup.rotation.y = time * 0.01;
-    this.orbits.forEach((o) => ((o.material as LineBasicMaterial).opacity = converge * 0.22));
+    this.orbits.forEach((o) => ((o.material as LineBasicMaterial).opacity = converge * 0.22 * clamp01(2 - f.orbitScale)));
     this.coreBody.uniforms.uTime.value = time;
 
     const fadeStep = this.reducedMotion ? 1 : Math.min(1, dt * 1.2);

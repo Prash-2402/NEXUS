@@ -11,8 +11,7 @@ export function RegistrationCTA({ onRegisterClick }: RegistrationCTAProps) {
   return (
     <section id="register" data-stage="5" className="section flex min-h-[90svh] items-center">
       <div className="container-site flex flex-col items-center text-center">
-        <p className="chip" data-reveal>
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold" />
+        <p className="font-mono text-[11px] uppercase tracking-label text-gold sm:text-xs" data-reveal>
           Registrations open
         </p>
         <SplitText

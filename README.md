@@ -21,6 +21,29 @@ pauses in background tabs, stays still for visitors who prefer reduced motion, a
 Scroll animations use GSAP ScrollTrigger: word-by-word headings, fade-ups, counters, the pinned Worlds section,
 the reel frame and the schedule timeline.
 
+## Stage launch (`/launch`)
+
+A hidden page for the launch event: an 85-second film that ends with the live site.
+It opens on a locked screen; pressing **Launch** (or Space / Enter) starts it.
+
+| Time | Chapter |
+| --- | --- |
+| 0:00 | Ten-second countdown, then ignition |
+| 0:11 | Warp through the starfield: "Everything begins with a spark." |
+| 0:18 | Hosted at CHRIST, organised by the Department, CAADS presents (logo cards) |
+| 0:33 | Fly past Earth, Jupiter and Saturn; each world's events roll in beside its planet |
+| 0:58 | The planets pull into orbit: "Different worlds. One universe." |
+| 1:07 | Save the dates, with day / event / world counters |
+| 1:14 | The logo assembles from particles, the tagline types out |
+| 1:24 | Handoff into the live homepage |
+
+- Sound is synthesised in the browser (no audio files). Toggle it on the locked screen.
+- **F** fullscreen. **→** jumps to the next chapter (for rehearsals). **Esc** skips straight to the site.
+- Works at `/launch` on Vercel (`vercel.json`) and Netlify (`public/_redirects`), and at `/#launch` anywhere.
+- Open it a minute early so the planet textures load, then leave it on the locked screen.
+- Timings live in `src/launch/timeline.ts`; the camera path per chapter in `launchFrame()` in
+  `src/scene/SpaceEngine.ts`; the title cards in `src/launch/Cinematic.tsx`.
+
 ## Editing content (no component changes needed)
 
 | What | Where |

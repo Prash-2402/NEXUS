@@ -160,3 +160,61 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #2c3456;
 }
+
+/* Launch sequence */
+@keyframes launch-ring {
+  0% { transform: scale(0.9); opacity: 0.9; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.launch-ring {
+  animation: launch-ring 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+@keyframes launch-pop {
+  0% { transform: scale(1.5); opacity: 0; filter: blur(8px); }
+  25% { transform: scale(1); opacity: 1; filter: blur(0); }
+  100% { transform: scale(0.92); opacity: 0.85; }
+}
+.launch-pop {
+  animation: launch-pop 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes launch-cursor {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.launch-cursor {
+  animation: launch-cursor 0.8s steps(1) infinite;
+}
+
+/* Launch button */
+@keyframes launch-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes launch-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+.launch-arc,
+.launch-arc-2 {
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+}
+.launch-arc {
+  background: conic-gradient(from 0deg, transparent 0 55%, rgba(143, 184, 255, 0.95) 72%, transparent 85% 100%);
+  animation: launch-spin 7s linear infinite;
+}
+.launch-arc-2 {
+  background: conic-gradient(from 180deg, transparent 0 60%, rgba(245, 196, 81, 0.8) 76%, transparent 86% 100%);
+  animation: launch-spin 11s linear infinite reverse;
+}
+.launch-core {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(143, 184, 255, 0.28), rgba(8, 10, 20, 0.92) 62%),
+    rgba(8, 10, 20, 0.9);
+  box-shadow: inset 0 0 40px rgba(143, 184, 255, 0.2), 0 0 70px -14px rgba(143, 184, 255, 0.55);
+  backdrop-filter: blur(10px);
+}
+.launch-core-glow {
+  background: radial-gradient(circle at 50% 85%, rgba(245, 196, 81, 0.22), transparent 55%);
+  animation: launch-breathe 3.2s ease-in-out infinite;
+  pointer-events: none;
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { siteConfig } from './config/site';
 import type { NexusEvent } from './data/events';
 import { gsap, ScrollTrigger, scrollToId, useGsap } from './lib/motion';
@@ -14,11 +14,18 @@ import { FAQ } from './components/FAQ';
 import { RegistrationCTA } from './components/RegistrationCTA';
 import { Footer } from './components/Footer';
 import { Toast } from './components/ui/Toast';
+import { isLaunchUrl } from './launch/isLaunchUrl';
+
+const LaunchExperience = lazy(() => import('./launch/LaunchExperience').then((m) => ({ default: m.LaunchExperience })));
+const launchMode = isLaunchUrl();
 
 export function App() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number>();
+  // In launch mode the site stays unmounted until the sequence hands over.
+  const [revealed, setRevealed] = useState(!launchMode);
+  const [showLaunch, setShowLaunch] = useState(launchMode);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -65,7 +72,7 @@ export function App() {
       once: true,
       onEnter: (batch) => gsap.to(batch, { autoAlpha: 1, y: 0, duration: 1.1, stagger: 0.08, overwrite: true }),
     });
-  });
+  }, [revealed]);
 
   // Recalculate trigger positions once fonts and images have settled.
   useEffect(() => {
@@ -85,21 +92,30 @@ export function App() {
       </a>
 
       <SpaceBackground />
-      <Navbar onRegisterClick={() => handleRegister()} />
 
-      <main className="relative z-10">
-        <Hero onRegisterClick={() => handleRegister()} onExploreClick={() => scrollToId('events')} />
-        <About />
-        <Worlds />
-        <EventUniverse onRegisterEvent={handleRegister} />
-        <Schedule onRegister={handleRegister} />
-        <Organizers />
-        <FAQ />
-        <RegistrationCTA onRegisterClick={() => handleRegister()} />
-      </main>
+      {revealed && (
+        <>
+          <Navbar onRegisterClick={() => handleRegister()} />
+          <main className="relative z-10">
+            <Hero onRegisterClick={() => handleRegister()} onExploreClick={() => scrollToId('events')} />
+            <About />
+            <Worlds />
+            <EventUniverse onRegisterEvent={handleRegister} />
+            <Schedule onRegister={handleRegister} />
+            <Organizers />
+            <FAQ />
+            <RegistrationCTA onRegisterClick={() => handleRegister()} />
+          </main>
+          <Footer />
+          <Toast message={toast} onDismiss={() => setToast(null)} />
+        </>
+      )}
 
-      <Footer />
-      <Toast message={toast} onDismiss={() => setToast(null)} />
+      {showLaunch && (
+        <Suspense fallback={null}>
+          <LaunchExperience onReveal={() => setRevealed(true)} onFinished={() => setShowLaunch(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }

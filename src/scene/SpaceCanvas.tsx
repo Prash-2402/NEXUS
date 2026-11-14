@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SpaceEngine } from './SpaceEngine';
+import { setEngine } from './engineRef';
 
 function hasWebGL() {
   try {
@@ -25,12 +26,16 @@ export default function SpaceCanvas() {
       engine = new SpaceEngine(canvas, { reducedMotion });
       engine.renderOnce();
       engine.start();
+      setEngine(engine);
       if (import.meta.env.DEV) (window as unknown as { __nexus?: SpaceEngine }).__nexus = engine;
       requestAnimationFrame(() => setReady(true));
     } catch (err) {
       console.warn('NEXUS: 3D background unavailable, using static fallback.', err);
     }
-    return () => engine?.dispose();
+    return () => {
+      setEngine(null);
+      engine?.dispose();
+    };
   }, []);
 
   return (

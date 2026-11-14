@@ -48,8 +48,7 @@ export function Hero({ onRegisterClick, onExploreClick }: HeroProps) {
   return (
     <section ref={ref} id="hero" data-stage="0" className="relative z-10 flex min-h-[100svh] items-center pb-24 pt-28">
       <div data-hero="content" className="container-site flex flex-col items-center text-center">
-        <p data-hero="eyebrow" className="chip">
-          <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+        <p data-hero="eyebrow" className="font-mono text-[11px] uppercase tracking-label text-fg-muted sm:text-xs">
           {siteConfig.organizingClub} presents · {siteConfig.eventIdentity}
         </p>
 
@@ -104,7 +103,7 @@ export function Hero({ onRegisterClick, onExploreClick }: HeroProps) {
               ))}
             </dl>
           ) : (
-            <p className="chip border-gold/40 text-gold">{countdown.formattedString}</p>
+            <p className="font-mono text-xs uppercase tracking-label text-gold">{countdown.formattedString}</p>
           )}
         </div>
       </div>
