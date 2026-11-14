@@ -41,7 +41,7 @@ import {
   streakFragment,
   streakVertex,
 } from './shaders';
-import { CH } from '../launch/timeline';
+import { CH, IMPACTS } from '../launch/timeline';
 
 /**
  * Scroll-driven space journey.
@@ -769,6 +769,16 @@ export class SpaceEngine {
     return { pos: this.tmpPos.clone(), look: this.tmpLook.clone() };
   }
 
+  /** Shake that kicks on every beat impact and dies away quickly. */
+  private impactShake(t: number) {
+    let s = 0;
+    for (const at of IMPACTS) {
+      const d = t - at;
+      if (d >= 0 && d < 0.6) s = Math.max(s, Math.exp(-d * 9));
+    }
+    return s;
+  }
+
   private launchFrame(t: number, time: number, out: FrameState) {
     const f = out;
     f.warp = 0;
@@ -785,6 +795,7 @@ export class SpaceEngine {
     const arr = this.camAt(5.2);
     arr.pos.y += 2;
     arr.look.y += 13;
+    const hitShake = this.impactShake(t);
 
     // Countdown: slow creep forward while the core wakes up.
     if (t < 0) {
@@ -792,62 +803,73 @@ export class SpaceEngine {
       f.pos.set(0, 0.6, 70 - pre * 25);
       f.look.set(0, 0, -60);
       f.stage = -0.6;
-      f.core = 0.5 + pre * 0.9 + Math.sin(time * (2 + pre * 10)) * 0.08 * pre;
-      f.coreScale = 1 + pre * 0.4;
-      f.shake = pre * pre * 0.12;
+      f.core = 0.5 + pre * 0.6 + Math.sin(time * (2 + pre * 6)) * 0.06 * pre;
+      f.coreScale = 1 + pre * 0.3;
       return;
     }
 
-    // Ignition: flare, shake, streaks begin.
-    if (t < CH.warp) {
-      const u = t / CH.warp;
-      f.pos.set(0, 0.6, 45 - u * 15);
-      f.look.set(0, 0, -60);
+    // Memory and montage: a slow drift forward that quickens as the beat builds.
+    if (t < CH.blackout) {
+      const memory = clamp01(t / CH.montage);
+      const montage = clamp01((t - CH.montage) / (CH.blackout - CH.montage));
+      const z = 45 - memory * 12 - montage * montage * 30;
+      f.pos.set(Math.sin(time * 0.2) * 0.6, 0.6 + Math.cos(time * 0.16) * 0.4, z);
+      f.look.set(0, 0, z - 120);
       f.stage = -0.6;
-      f.core = 4.2 - u * 2.6;
-      f.coreScale = 2.6 - u * 0.8;
-      f.shake = 1.1 * (1 - u) + 0.25;
-      f.warp = smooth(u);
-      f.stretch = smooth(u) * 34;
-      f.fov = this.baseFov + u * 6;
+      f.core = 0.35 + montage * 0.6;
+      f.warp = montage * montage * 0.45;
+      f.stretch = f.warp * 24;
+      f.fov = this.baseFov + montage * 4;
+      f.shake = montage * 0.05;
       return;
     }
 
-    // Warp: full speed, braking in the last second and a half.
-    const driftStartZ = -20;
+    // Blackout: the screen is covered; park the camera ready for the drop.
+    if (t < CH.drop) {
+      f.pos.set(0, 0.6, 3);
+      f.look.set(0, 0, -117);
+      f.stage = -0.6;
+      f.core = 0.2;
+      return;
+    }
+
+    // The drop: flash, full warp, heavy shake.
+    const dropEndZ = -70;
     if (t < CH.institution) {
-      const u = (t - CH.warp) / (CH.institution - CH.warp);
-      const brake = range(0.75, 1, u);
-      const z = lerp(30, driftStartZ, smooth(u));
-      f.pos.set(Math.sin(time * 2.3) * 0.15, 0.6 + Math.cos(time * 1.7) * 0.15, z);
+      const u = (t - CH.drop) / (CH.institution - CH.drop);
+      const z = lerp(3, dropEndZ, smooth(u));
+      const brake = range(0.7, 1, u);
+      f.pos.set(Math.sin(time * 2.3) * 0.2, 0.6 + Math.cos(time * 1.7) * 0.2, z);
       f.look.set(0, 0, z - 120);
       f.stage = lerp(-0.6, 1, u);
-      f.core = 1.6 - brake * 0.9;
-      f.coreScale = 1.8 - brake * 0.8;
-      f.shake = 0.18 * (1 - brake);
+      f.core = 4 * (1 - range(0, 0.25, u)) + 1;
+      f.coreScale = 2.4 - u;
       f.warp = 1 - brake;
       f.stretch = 34 * (1 - brake);
-      f.fov = this.baseFov + 10 * (1 - brake);
+      f.fov = this.baseFov + 12 * (1 - brake);
+      f.shake = 0.15 * (1 - brake) + hitShake * 0.9;
       return;
     }
 
-    // Institution: a slow drift through the nebula behind the logo cards.
-    const driftEndZ = -70;
+    // Logos: a slow drift through the nebula, punched on each beat impact.
+    const driftEndZ = -82;
     if (t < CH.worlds) {
       const u = (t - CH.institution) / (CH.worlds - CH.institution);
-      const z = lerp(driftStartZ, driftEndZ, u);
-      f.pos.set(Math.sin(time * 0.2) * 0.8, 0.6 + Math.cos(time * 0.17) * 0.5, z);
+      const z = lerp(dropEndZ, driftEndZ, u);
+      f.pos.set(Math.sin(time * 0.25) * 0.6, 0.6, z);
       f.look.set(0, 0, z - 120);
-      f.stage = lerp(1, 1.2, u);
+      f.stage = 1;
+      f.shake = hitShake * 0.6;
+      f.fov = this.baseFov - hitShake * 3;
       return;
     }
 
-    // Worlds: fly past each planet, two seconds of travel then a hold.
+    // Worlds: fly to each planet in about a bar, then hold for the events.
     const worldCams = [this.camAt(2.25), this.camAt(2.5), this.camAt(2.75)];
     if (t < CH.converge) {
       const local = t - CH.worlds;
       const i = Math.min(2, Math.floor(local / CH.worldDur));
-      const travel = clamp01((local - i * CH.worldDur) / 2.4);
+      const travel = clamp01((local - i * CH.worldDur) / 2);
       const u = smooth(travel);
       const from = i === 0 ? { pos: new Vector3(0, 0.6, driftEndZ), look: new Vector3(0, 0, driftEndZ - 120) } : worldCams[i - 1];
       const to = worldCams[i];
@@ -856,9 +878,10 @@ export class SpaceEngine {
       f.pos.x += Math.sin(time * 0.3) * 0.25;
       f.pos.y += Math.cos(time * 0.23) * 0.2;
       f.stage = [2.25, 2.5, 2.75][i];
-      f.appear = i === 0 ? smooth(clamp01(local / 1.5)) : 1;
-      f.warp = i === 0 ? 0 : Math.sin(travel * Math.PI) * 0.3;
+      f.appear = i === 0 ? smooth(clamp01(local / 1.2)) : 1;
+      f.warp = Math.sin(travel * Math.PI) * (i === 0 ? 0.5 : 0.3);
       f.stretch = f.warp * 22;
+      f.shake = hitShake * 0.5;
       return;
     }
 
@@ -866,18 +889,19 @@ export class SpaceEngine {
     if (t < CH.dates) {
       const u = (t - CH.converge) / (CH.dates - CH.converge);
       const mid = this.camAt(3.4);
-      const a = smooth(range(0, 0.4, u));
+      const a = smooth(range(0, 0.45, u));
       const b = smooth(range(0.35, 1, u));
       f.pos.copy(worldCams[2].pos).lerp(mid.pos, a).lerp(arr.pos, b);
       f.look.copy(worldCams[2].look).lerp(mid.look, a).lerp(arr.look, b);
       f.stage = lerp(2.75, 5.2, u);
       f.appear = 1;
-      f.converge = smooth(range(0.15, 0.9, u));
+      f.converge = smooth(range(0.1, 0.95, u));
       f.core = 0.5 + f.converge * 0.4 + Math.sin(time * 1.3) * 0.04;
+      f.shake = hitShake * 0.35;
       return;
     }
 
-    // Dates and logo: hold on the system, slowly circling it; a pulse on the reveal hit.
+    // Dates and logo: hold on the system, slowly circling it; a pulse on the final drop.
     const hold = t - CH.dates;
     const orbit = Math.sin(hold * 0.12) * 7;
     f.pos.copy(arr.pos).add(new Vector3(orbit, Math.sin(hold * 0.18) * 0.6, -hold * 0.35));
@@ -888,7 +912,7 @@ export class SpaceEngine {
     const hit = t > CH.hit ? Math.exp(-(t - CH.hit) * 2.5) : 0;
     f.core = 0.9 + Math.sin(time * 1.3) * 0.04 + hit * 1.4;
     f.coreScale = 1 + hit * 0.5;
-    f.shake = hit * 0.35;
+    f.shake = hit * 0.35 + hitShake * 0.3;
   }
 
   /* ---------------- Frame ---------------- */

@@ -1,3 +1,5 @@
+import type { BeatEvent } from './beat';
+
 /**
  * Sound for the launch sequence, synthesised with the Web Audio API.
  * No audio files: everything is built from oscillators and noise, so it works offline.
@@ -8,6 +10,8 @@ export class LaunchAudio {
   private pad: { gain: GainNode; stop: () => void } | null = null;
   private ambientPad: { gain: GainNode; stop: () => void } | null = null;
   private noiseBuffer: AudioBuffer | null = null;
+  /** Drums and bass go through a compressor so the hits sit together. */
+  private drums: GainNode | null = null;
   muted = false;
 
   /** Must be called from a user gesture (the launch click) so the browser allows sound. */
@@ -21,7 +25,23 @@ export class LaunchAudio {
     this.ctx = new Ctx();
     this.master = this.ctx.createGain();
     this.master.gain.value = this.muted ? 0 : 0.9;
-    this.master.connect(this.ctx.destination);
+    // Brick-wall limiter on the output so big drops never clip or crackle.
+    const limiter = this.ctx.createDynamicsCompressor();
+    limiter.threshold.value = -6;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.001;
+    limiter.release.value = 0.12;
+    this.master.connect(limiter).connect(this.ctx.destination);
+
+    const comp = this.ctx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.004;
+    comp.release.value = 0.18;
+    this.drums = this.ctx.createGain();
+    this.drums.gain.value = 0.85;
+    this.drums.connect(comp).connect(this.master);
 
     // 4 seconds of white noise, reused by every noise voice
     const len = this.ctx.sampleRate * 4;
@@ -51,6 +71,212 @@ export class LaunchAudio {
     gain.gain.setValueAtTime(0.0001, start);
     gain.gain.exponentialRampToValueAtTime(peak, start + attack);
     gain.gain.exponentialRampToValueAtTime(0.0001, start + attack + decay);
+  }
+
+
+  /** Current audio-clock time, for scheduling beat events ahead of the picture. */
+  get now() {
+    return this.ctx?.currentTime ?? 0;
+  }
+
+  /** Play one beat event at an exact audio-clock time. */
+  schedule(ev: BeatEvent, when: number) {
+    if (!this.ctx || !this.drums) return;
+    const at = Math.max(when, this.ctx.currentTime);
+    switch (ev.kind) {
+      case 'kick':
+        return this.kick(at, 1);
+      case 'kickSoft':
+        return this.kick(at, 0.45);
+      case 'snare':
+        return this.snare(at, ev.value ?? 1);
+      case 'hat':
+        return this.hat(at);
+      case 'bass':
+        return this.bassNote(at, ev.value ?? 55);
+      case 'impact':
+        return this.impact(at);
+      case 'riser':
+        return this.riser(at, ev.value ?? 2);
+      case 'drop':
+        this.kick(at, 1);
+        return this.boom(at);
+    }
+  }
+
+  private saturator: WaveShaperNode | null = null;
+
+  /** Soft clipper that adds harmonics, so deep bass is still heard on small speakers. */
+  private drive() {
+    if (!this.saturator && this.ctx) {
+      const curve = new Float32Array(1024);
+      for (let i = 0; i < curve.length; i++) {
+        const x = (i / (curve.length - 1)) * 2 - 1;
+        curve[i] = Math.tanh(x * 3.5);
+      }
+      this.saturator = this.ctx.createWaveShaper();
+      this.saturator.curve = curve;
+      this.saturator.connect(this.master!);
+    }
+    return this.saturator!;
+  }
+
+  /**
+   * The drop: a long distorted 808 sub with a punchy mid "thud" on top. The distortion
+   * and the 100-160 Hz layer make it hit on laptop and projector speakers, not only subwoofers.
+   */
+  private boom(at: number) {
+    const ctx = this.ctx!;
+    const sub = ctx.createOscillator();
+    const sg = ctx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(110, at);
+    sub.frequency.exponentialRampToValueAtTime(48, at + 0.18);
+    sg.gain.setValueAtTime(0.0001, at);
+    sg.gain.exponentialRampToValueAtTime(0.55, at + 0.005);
+    sg.gain.setValueAtTime(0.55, at + 0.25);
+    sg.gain.exponentialRampToValueAtTime(0.0001, at + 1.7);
+    sub.connect(sg).connect(this.drive());
+    sub.start(at);
+    sub.stop(at + 1.8);
+
+    const thud = ctx.createOscillator();
+    const tg = ctx.createGain();
+    thud.type = 'triangle';
+    thud.frequency.setValueAtTime(160, at);
+    thud.frequency.exponentialRampToValueAtTime(90, at + 0.25);
+    this.env(tg, at, 0.003, 0.4, 0.35);
+    thud.connect(tg).connect(this.master!);
+    thud.start(at);
+    thud.stop(at + 0.45);
+
+    // short clap-like snap at the start for attack (kept under 3 kHz)
+    const n = this.noise(at, 0.2);
+    if (n) {
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1200;
+      bp.Q.value = 0.9;
+      const g = ctx.createGain();
+      this.env(g, at, 0.002, 0.4, 0.14);
+      n.connect(bp).connect(g).connect(this.master!);
+    }
+  }
+
+  private kick(at: number, level: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(150, at);
+    o.frequency.exponentialRampToValueAtTime(45, at + 0.12);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.95 * level, at + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.42);
+    o.connect(g).connect(this.drums!);
+    o.start(at);
+    o.stop(at + 0.45);
+  }
+
+  /** Snare kept warm: a low body plus noise cut above 3.5 kHz so it never hisses. */
+  private snare(at: number, level: number) {
+    const ctx = this.ctx!;
+    const body = ctx.createOscillator();
+    const bg = ctx.createGain();
+    body.type = 'triangle';
+    body.frequency.setValueAtTime(190, at);
+    body.frequency.exponentialRampToValueAtTime(120, at + 0.1);
+    this.env(bg, at, 0.002, 0.35 * level, 0.14);
+    body.connect(bg).connect(this.drums!);
+    body.start(at);
+    body.stop(at + 0.2);
+
+    const n = this.noise(at, 0.25);
+    if (!n) return;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1500;
+    bp.Q.value = 0.8;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 3500;
+    const g = ctx.createGain();
+    this.env(g, at, 0.002, 0.28 * level, 0.16);
+    n.connect(bp).connect(lp).connect(g).connect(this.drums!);
+  }
+
+  /** A soft, muted shaker on the off-beat (no bright cymbal). */
+  private hat(at: number) {
+    const ctx = this.ctx!;
+    const n = this.noise(at, 0.08);
+    if (!n) return;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 2400;
+    bp.Q.value = 1.2;
+    const g = ctx.createGain();
+    this.env(g, at, 0.002, 0.035, 0.05);
+    n.connect(bp).connect(g).connect(this.drums!);
+  }
+
+  private bassNote(at: number, hz: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    const lp = ctx.createBiquadFilter();
+    const g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.value = hz;
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(420, at);
+    lp.frequency.exponentialRampToValueAtTime(140, at + 0.22);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.32, at + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.24);
+    o.connect(lp).connect(g).connect(this.drums!);
+    o.start(at);
+    o.stop(at + 0.26);
+  }
+
+  /** Big low hit for logos and drops. */
+  private impact(at: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(120, at);
+    o.frequency.exponentialRampToValueAtTime(40, at + 0.9);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.45, at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 1.2);
+    o.connect(g).connect(this.drive());
+    o.start(at);
+    o.stop(at + 1.4);
+
+    const n = this.noise(at, 0.6);
+    if (!n) return;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(900, at);
+    lp.frequency.exponentialRampToValueAtTime(120, at + 0.5);
+    const ng = ctx.createGain();
+    this.env(ng, at, 0.003, 0.45, 0.5);
+    n.connect(lp).connect(ng).connect(this.master!);
+  }
+
+  /** Rising pitch sweep into a drop (tonal only, no noise). */
+  private riser(at: number, length: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    const og = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(110, at);
+    o.frequency.exponentialRampToValueAtTime(440, at + length);
+    og.gain.setValueAtTime(0.0001, at);
+    og.gain.exponentialRampToValueAtTime(0.12, at + length * 0.95);
+    og.gain.exponentialRampToValueAtTime(0.0001, at + length + 0.05);
+    o.connect(og).connect(this.master!);
+    o.start(at);
+    o.stop(at + length + 0.1);
   }
 
   /** Countdown tick; pitch rises as the number falls. */

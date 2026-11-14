@@ -7,8 +7,10 @@ import { cn } from '../lib/utils';
 import { Cinematic } from './Cinematic';
 import { LaunchAudio } from './LaunchAudio';
 import { LogoParticles } from './LogoParticles';
-import { CH, CONVERGE_LINES, COUNTDOWN, DATES_CARD, INSTITUTION_CARDS, VOICE_LINES, worldWindow } from './timeline';
+import { CH, COUNTDOWN, VOICE_LINES } from './timeline';
+import { BEAT_EVENTS } from './beat';
 import { Voiceover } from './Voiceover';
+import { PHOTOS } from './photos';
 
 /**
  * The stage launch film. Opens on a locked screen; one press (or Space / Enter)
@@ -20,7 +22,9 @@ import { Voiceover } from './Voiceover';
 
 const TYPE_SPEED = 0.055;
 const CHAPTERS = [
-  CH.warp,
+  CH.montage,
+  CH.blackout,
+  CH.drop,
   CH.institution,
   CH.worlds,
   CH.worlds + CH.worldDur,
@@ -61,6 +65,8 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
 
   const engineRef = useRef<SpaceEngine | null>(getEngine());
   const audioRef = useRef(new LaunchAudio());
+  /** Next beat event to schedule. */
+  const beatIndex = useRef(0);
   const voiceRef = useRef<Voiceover>();
   if (!voiceRef.current) voiceRef.current = new Voiceover(VOICE_LINES.length);
   const particlesRef = useRef<LogoParticles | null>(null);
@@ -77,6 +83,15 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
   const tagline = siteConfig.tagline;
 
   useEffect(() => onEngine((engine) => (engineRef.current = engine)), []);
+
+  // Load every photo while the locked screen is up, so the fast montage cuts never show a blank frame.
+  useEffect(() => {
+    PHOTOS.forEach((src) => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = src;
+    });
+  }, []);
 
   // Lock the page while the show runs.
   useEffect(() => {
@@ -156,12 +171,17 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
         return;
       }
 
-      // Sound cues, each fired once
-      once('ignite', () => {
+      once('start', () => {
         phaseRef.current = 'running';
         setPhase('running');
-        audio.ignition();
       });
+
+      // The beat: schedule a little ahead on the audio clock so every hit lands exactly.
+      const LOOKAHEAD = 0.2;
+      while (beatIndex.current < BEAT_EVENTS.length && BEAT_EVENTS[beatIndex.current].at < t + LOOKAHEAD) {
+        const ev = BEAT_EVENTS[beatIndex.current++];
+        if (ev.at >= t - 0.05) audio.schedule(ev, audio.now + (ev.at - t));
+      }
       // Voiceover. A line that is already well past (after a chapter skip) is dropped, not spoken late.
       VOICE_LINES.forEach((line, i) => {
         if (t >= line.at) {
@@ -170,31 +190,16 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
           });
         }
       });
-      if (t >= 0.7) once('warp', () => audio.warp());
-      if (t >= CH.institution) once('ambient', () => audio.ambient());
-      Object.entries(INSTITUTION_CARDS).forEach(([key, w]) => {
-        if (t >= w.at) once(`card-${key}`, () => audio.swoosh());
-      });
-      [0, 1, 2].forEach((i) => {
-        if (t >= worldWindow(i).at) once(`world-${i}`, () => audio.swoosh());
-      });
-      if (t >= CH.converge) once('converge', () => audio.arrival());
-      CONVERGE_LINES.forEach((l, i) => {
-        if (t >= l.at) once(`line-${i}`, () => audio.bass());
-      });
-      if (t >= DATES_CARD.at) once('dates', () => audio.swoosh());
       if (t >= CH.logo) once('particles', () => particles?.assemble(t));
       if (t >= CH.hit) {
         once('hit', () => {
           particles?.burst(t);
-          audio.reveal();
         });
       }
       if (t >= CH.handoff) once('handoff', handoff);
       if (t >= CH.finished) once('finished', finish);
 
       // Flash and backdrop
-      if (flashRef.current) flashRef.current.style.opacity = String(clamp01(1 - t / 0.8));
       if (backdropRef.current) backdropRef.current.style.opacity = String(0.55 * clamp01(1 - t / 1.2));
 
       // Logo: particles first, then the crisp image takes over
@@ -242,6 +247,8 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
   /** Move the clock so that `t` becomes `seconds`. */
   const jumpTo = useCallback((seconds: number) => {
     startRef.current = performance.now() - (seconds + COUNTDOWN) * 1000;
+    const next = BEAT_EVENTS.findIndex((e) => e.at >= seconds);
+    beatIndex.current = next === -1 ? BEAT_EVENTS.length : next;
   }, []);
 
   const skip = useCallback(() => {

@@ -23,29 +23,38 @@ the reel frame and the schedule timeline.
 
 ## Stage launch (`/launch`)
 
-A hidden page for the launch event: an 80-second film with voiceover that ends with the live site.
-It opens on a locked screen; pressing **Launch** (or Space / Enter) starts it.
+A hidden page for the launch event: a 95-second "NEXUS is back" film with a beat and voiceover,
+ending in the live site. It opens on a locked screen; pressing **Launch** (or Space / Enter) starts it.
 
 | Time | Chapter |
 | --- | --- |
-| 0:00 | Ten-second countdown, then ignition |
-| 0:11 | Warp through the starfield: "Everything begins with a spark." |
-| 0:18 | Hosted at CHRIST, organised by the Department, CAADS presents (logo cards) |
-| 0:27 | Fly past Earth, Jupiter and Saturn; each world's events roll in beside its planet |
-| 0:53 | The planets pull into orbit: "Different worlds. One universe." |
-| 1:01 | Save the dates, with day / event / world counters |
-| 1:09 | The logo assembles from particles, the tagline types out |
-| 1:18 | Handoff into the live homepage |
+| 0:00 | Ten-second countdown |
+| 0:10 | Memory: last year's photos drift past. "Last year, we built something." |
+| 0:22 | Montage: photos cut on the beat. "The nights. The noise. The wins." |
+| 0:32 | Blackout: "It never really ended." |
+| 0:38 | The drop: **NEXUS IS BACK**, warp, full beat |
+| 0:42 | CHRIST, Department, CAADS: four seconds each, every logo lands on a beat drop |
+| 0:54 | Fly past Earth, Jupiter and Saturn; each world's events land one per beat |
+| 1:12 | The planets pull into orbit: "Different worlds. One universe." |
+| 1:18 | Save the dates, with day / event / world counters |
+| 1:26 | The logo assembles from particles and locks in on the final drop |
+| 1:34 | Handoff into the live homepage |
 
-- Sound is synthesised in the browser (no audio files). Toggle it on the locked screen.
-- The voiceover plays pre-generated clips from `public/launch/vo/` (Microsoft neural voice, made with
-  `scripts/generate-voiceover.py`). If you change a line in `VOICE_LINES` (`src/launch/timeline.ts`), change it
-  in the script too and re-run it. A missing clip falls back to the browser's speech voice.
+- **Photos:** 25 photos from last year's NEXUS (CAADS 25-26 Drive: FIFA, Murder Mystery, Tech Olympics,
+  Interactive event) in `public/launch/photos/01-25.webp`. Group and action shots only, each checked for
+  sharpness. The first 14 drift past in the memory chapter, the rest are cut on the beat.
+  To swap one, replace the file and keep the name.
+- **Beat:** synthesised in the browser at 120 BPM (`src/launch/beat.ts`), no audio files or licences.
+  Every logo lands on a drop: a build, half a beat of silence, then a distorted 808 boom with a mid
+  "thud" so it is heard on laptop and projector speakers. A limiter on the output prevents clipping.
+- **Voiceover:** pre-generated clips in `public/launch/vo/` (Microsoft neural voice, made with
+  `scripts/generate-voiceover.py`). If you change a line in `VOICE_LINES` (`src/launch/timeline.ts`),
+  change it in the script too and re-run it. A missing clip falls back to the browser's speech voice.
 - **F** fullscreen. **→** jumps to the next chapter (for rehearsals). **Esc** skips straight to the site.
 - Works at `/launch` on Vercel (`vercel.json`) and Netlify (`public/_redirects`), and at `/#launch` anywhere.
 - Open it a minute early so the planet textures load, then leave it on the locked screen.
 - Timings live in `src/launch/timeline.ts`; the camera path per chapter in `launchFrame()` in
-  `src/scene/SpaceEngine.ts`; the title cards in `src/launch/Cinematic.tsx`.
+  `src/scene/SpaceEngine.ts`; the picture layer in `src/launch/Cinematic.tsx`.
 
 ## Editing content (no component changes needed)
 
