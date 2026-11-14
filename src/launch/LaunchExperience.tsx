@@ -7,7 +7,8 @@ import { cn } from '../lib/utils';
 import { Cinematic } from './Cinematic';
 import { LaunchAudio } from './LaunchAudio';
 import { LogoParticles } from './LogoParticles';
-import { CH, CONVERGE_LINES, COUNTDOWN, DATES_CARD, INSTITUTION_CARDS, worldWindow } from './timeline';
+import { CH, CONVERGE_LINES, COUNTDOWN, DATES_CARD, INSTITUTION_CARDS, VOICE_LINES, worldWindow } from './timeline';
+import { Voiceover } from './Voiceover';
 
 /**
  * The stage launch film. Opens on a locked screen; one press (or Space / Enter)
@@ -60,6 +61,8 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
 
   const engineRef = useRef<SpaceEngine | null>(getEngine());
   const audioRef = useRef(new LaunchAudio());
+  const voiceRef = useRef<Voiceover>();
+  if (!voiceRef.current) voiceRef.current = new Voiceover(VOICE_LINES.length);
   const particlesRef = useRef<LogoParticles | null>(null);
   const phaseRef = useRef<Phase>('idle');
   const startRef = useRef(0);
@@ -124,6 +127,7 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     finished.current = true;
     cancelAnimationFrame(rafRef.current);
     audioRef.current.dispose();
+    voiceRef.current?.dispose();
     onFinished();
   }, [onFinished]);
 
@@ -157,6 +161,14 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
         phaseRef.current = 'running';
         setPhase('running');
         audio.ignition();
+      });
+      // Voiceover. A line that is already well past (after a chapter skip) is dropped, not spoken late.
+      VOICE_LINES.forEach((line, i) => {
+        if (t >= line.at) {
+          once(`vo-${i}`, () => {
+            if (t < line.at + 1.5) voiceRef.current?.speak(i, line.text);
+          });
+        }
       });
       if (t >= 0.7) once('warp', () => audio.warp());
       if (t >= CH.institution) once('ambient', () => audio.ambient());
@@ -197,7 +209,7 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
       if (taglineRef.current && t >= CH.tagline) {
         const chars = Math.min(tagline.length, Math.floor((t - CH.tagline) / TYPE_SPEED));
         if (chars !== typedRef.current) {
-          if (chars > typedRef.current && tagline[chars - 1] !== ' ') audio.type();
+
           typedRef.current = chars;
           taglineRef.current.textContent = tagline.slice(0, chars);
         }
@@ -220,6 +232,7 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     const audio = audioRef.current;
     audio.init();
     audio.setMuted(muted);
+    voiceRef.current?.setEnabled(!muted);
     startRef.current = performance.now();
     lastRef.current = startRef.current;
     audio.tick(COUNTDOWN);
@@ -237,6 +250,7 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
       finish();
       return;
     }
+    voiceRef.current?.stop();
     jumpTo(CH.handoff);
   }, [finish, handoff, jumpTo]);
 
@@ -244,7 +258,10 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     if (phaseRef.current === 'idle') return;
     const now = (performance.now() - startRef.current) / 1000 - COUNTDOWN;
     const next = CHAPTERS.find((c) => c > now + 0.05);
-    if (next !== undefined) jumpTo(next);
+    if (next !== undefined) {
+      voiceRef.current?.stop();
+      jumpTo(next);
+    }
   }, [jumpTo]);
 
   const toggleFullscreen = useCallback(() => {
@@ -280,6 +297,7 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     const next = !muted;
     setMuted(next);
     audioRef.current.setMuted(next);
+    voiceRef.current?.setEnabled(!next);
   };
 
   const idle = phase === 'idle';
@@ -336,7 +354,7 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
           <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between text-fg-muted">
             <button onClick={toggleMute} className="flex items-center gap-2 text-xs transition-colors hover:text-fg">
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              Sound {muted ? 'off' : 'on'}
+              Sound and voice {muted ? 'off' : 'on'}
             </button>
             <button onClick={toggleFullscreen} className="flex items-center gap-2 text-xs transition-colors hover:text-fg">
               {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}

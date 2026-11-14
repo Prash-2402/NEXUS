@@ -96,7 +96,7 @@ export class LaunchAudio {
     if (burst) {
       const lp = this.ctx.createBiquadFilter();
       lp.type = 'lowpass';
-      lp.frequency.setValueAtTime(1800, now);
+      lp.frequency.setValueAtTime(600, now);
       lp.frequency.exponentialRampToValueAtTime(120, now + 1.1);
       const g = this.ctx.createGain();
       this.env(g, now, 0.01, 0.7, 1.1);
@@ -114,7 +114,7 @@ export class LaunchAudio {
       bp.type = 'bandpass';
       bp.Q.value = 0.7;
       bp.frequency.setValueAtTime(140, now);
-      bp.frequency.exponentialRampToValueAtTime(2600, now + 4.6);
+      bp.frequency.exponentialRampToValueAtTime(700, now + 4.6);
       bp.frequency.exponentialRampToValueAtTime(300, now + 5.9);
       const g = this.ctx.createGain();
       g.gain.setValueAtTime(0.0001, now);
@@ -132,7 +132,7 @@ export class LaunchAudio {
     drone.frequency.exponentialRampToValueAtTime(210, now + 4.6);
     lp.type = 'lowpass';
     lp.frequency.setValueAtTime(400, now);
-    lp.frequency.exponentialRampToValueAtTime(2400, now + 4.6);
+    lp.frequency.exponentialRampToValueAtTime(600, now + 4.6);
     dg.gain.setValueAtTime(0.0001, now);
     dg.gain.exponentialRampToValueAtTime(0.14, now + 0.8);
     dg.gain.setValueAtTime(0.14, now + 4.3);
@@ -195,9 +195,9 @@ export class LaunchAudio {
     const bp = this.ctx.createBiquadFilter();
     bp.type = 'bandpass';
     bp.Q.value = 0.9;
-    bp.frequency.setValueAtTime(260, now);
-    bp.frequency.exponentialRampToValueAtTime(2200, now + 0.35);
-    bp.frequency.exponentialRampToValueAtTime(500, now + 1.0);
+    bp.frequency.setValueAtTime(160, now);
+    bp.frequency.exponentialRampToValueAtTime(420, now + 0.35);
+    bp.frequency.exponentialRampToValueAtTime(180, now + 1.0);
     const g = this.ctx.createGain();
     g.gain.setValueAtTime(0.0001, now);
     g.gain.exponentialRampToValueAtTime(0.16, now + 0.3);
@@ -220,38 +220,35 @@ export class LaunchAudio {
     o.stop(now + 1.6);
   }
 
-  /** Bright hit when the logo locks into place. */
+  /** Soft swell when the logo locks into place: a warm low note and a breath of air. */
   reveal() {
     if (!this.ctx || !this.master) return;
     const now = this.ctx.currentTime;
-    [523.25, 659.25, 783.99, 1046.5].forEach((hz, i) => {
+    [110, 220, 329.63].forEach((hz, i) => {
       const o = this.ctx!.createOscillator();
       const g = this.ctx!.createGain();
-      o.type = 'triangle';
+      o.type = 'sine';
       o.frequency.value = hz;
-      this.env(g, now + i * 0.02, 0.01, 0.22, 2.8);
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(i === 0 ? 0.16 : 0.07, now + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
       o.connect(g).connect(this.master!);
       o.start(now);
-      o.stop(now + 3);
+      o.stop(now + 3.3);
     });
-    const shimmer = this.noise(now, 1.6);
-    if (shimmer) {
-      const hp = this.ctx.createBiquadFilter();
-      hp.type = 'highpass';
-      hp.frequency.value = 5000;
+    const air = this.noise(now, 1.6);
+    if (air) {
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(500, now);
+      lp.frequency.exponentialRampToValueAtTime(700, now + 0.5);
+      lp.frequency.exponentialRampToValueAtTime(300, now + 1.5);
       const g = this.ctx.createGain();
-      this.env(g, now, 0.01, 0.18, 1.5);
-      shimmer.connect(hp).connect(g).connect(this.master);
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.06, now + 0.4);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
+      air.connect(lp).connect(g).connect(this.master);
     }
-    const boom = this.ctx.createOscillator();
-    const bg = this.ctx.createGain();
-    boom.type = 'sine';
-    boom.frequency.setValueAtTime(80, now);
-    boom.frequency.exponentialRampToValueAtTime(30, now + 0.9);
-    this.env(bg, now, 0.01, 0.6, 1);
-    boom.connect(bg).connect(this.master);
-    boom.start(now);
-    boom.stop(now + 1.1);
   }
 
   /** Tiny click for each typed letter. */
@@ -262,7 +259,7 @@ export class LaunchAudio {
     const g = this.ctx.createGain();
     o.type = 'square';
     o.frequency.value = 1400 + Math.random() * 400;
-    this.env(g, now, 0.002, 0.05, 0.03);
+    this.env(g, now, 0.002, 0.02, 0.03);
     o.connect(g).connect(this.master);
     o.start(now);
     o.stop(now + 0.05);

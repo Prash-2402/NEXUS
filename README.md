@@ -23,7 +23,7 @@ the reel frame and the schedule timeline.
 
 ## Stage launch (`/launch`)
 
-A hidden page for the launch event: an 85-second film that ends with the live site.
+A hidden page for the launch event: an 80-second film with voiceover that ends with the live site.
 It opens on a locked screen; pressing **Launch** (or Space / Enter) starts it.
 
 | Time | Chapter |
@@ -31,13 +31,16 @@ It opens on a locked screen; pressing **Launch** (or Space / Enter) starts it.
 | 0:00 | Ten-second countdown, then ignition |
 | 0:11 | Warp through the starfield: "Everything begins with a spark." |
 | 0:18 | Hosted at CHRIST, organised by the Department, CAADS presents (logo cards) |
-| 0:33 | Fly past Earth, Jupiter and Saturn; each world's events roll in beside its planet |
-| 0:58 | The planets pull into orbit: "Different worlds. One universe." |
-| 1:07 | Save the dates, with day / event / world counters |
-| 1:14 | The logo assembles from particles, the tagline types out |
-| 1:24 | Handoff into the live homepage |
+| 0:27 | Fly past Earth, Jupiter and Saturn; each world's events roll in beside its planet |
+| 0:53 | The planets pull into orbit: "Different worlds. One universe." |
+| 1:01 | Save the dates, with day / event / world counters |
+| 1:09 | The logo assembles from particles, the tagline types out |
+| 1:18 | Handoff into the live homepage |
 
 - Sound is synthesised in the browser (no audio files). Toggle it on the locked screen.
+- The voiceover plays pre-generated clips from `public/launch/vo/` (Microsoft neural voice, made with
+  `scripts/generate-voiceover.py`). If you change a line in `VOICE_LINES` (`src/launch/timeline.ts`), change it
+  in the script too and re-run it. A missing clip falls back to the browser's speech voice.
 - **F** fullscreen. **→** jumps to the next chapter (for rehearsals). **Esc** skips straight to the site.
 - Works at `/launch` on Vercel (`vercel.json`) and Netlify (`public/_redirects`), and at `/#launch` anywhere.
 - Open it a minute early so the planet textures load, then leave it on the locked screen.

@@ -26,9 +26,10 @@ function window_(t: number, w: Window, delay = 0, dur = 0.8) {
   return { enter, exit, alpha: Math.min(enter, exit) };
 }
 
-function rise(t: number, w: Window, delay = 0, dur = 0.8, distance = 26): CSSProperties | null {
+function rise(t: number, w: Window, delay = 0, dur = 0.8, distance = 26): CSSProperties {
   const p = window_(t, w, delay, dur);
-  if (!p) return null;
+  // Still waiting for its turn (or already gone): keep it hidden.
+  if (!p) return { opacity: 0 };
   return {
     opacity: p.alpha,
     transform: `translateY(${(1 - p.enter) * distance}px)`,
@@ -65,7 +66,7 @@ function Beat({ t, w, children, size = 'lg' }: { t: number; w: Window; children:
       )}
     >
       {words.map((word, i) => (
-        <span key={i} className="inline-block" style={rise(t, w, i * 0.09, 0.9) ?? { opacity: 0 }}>
+        <span key={i} className="inline-block" style={rise(t, w, i * 0.09, 0.9)}>
           {word}
           {i < words.length - 1 ? ' ' : ''}
         </span>
@@ -108,14 +109,14 @@ function LogoCard({
           <div className="absolute h-64 w-64 rounded-full bg-ice/15 blur-3xl" />
           <img src={logo} alt="" className={cn('relative object-contain drop-shadow-[0_0_30px_rgba(143,184,255,0.35)]', logoClass)} />
         </div>
-        <p className="mt-10 font-mono text-[11px] uppercase tracking-label text-ice sm:text-xs" style={rise(t, w, 0.35) ?? undefined}>
+        <p className="mt-10 font-mono text-[11px] uppercase tracking-label text-ice sm:text-xs" style={rise(t, w, 0.35)}>
           {eyebrow}
         </p>
-        <h2 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-tight text-fg [text-wrap:balance] sm:text-4xl lg:text-6xl" style={rise(t, w, 0.5) ?? undefined}>
+        <h2 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-tight text-fg [text-wrap:balance] sm:text-4xl lg:text-6xl" style={rise(t, w, 0.5)}>
           {name}
         </h2>
         {sub && (
-          <p className="mt-4 font-display text-lg text-fg-muted sm:text-2xl" style={rise(t, w, 0.7) ?? undefined}>
+          <p className="mt-4 font-display text-lg text-fg-muted sm:text-2xl" style={rise(t, w, 0.7)}>
             {sub}
           </p>
         )}
@@ -135,14 +136,14 @@ function WorldCard({ t, index }: { t: number; index: number }) {
     <>
       <Scrim t={t} w={w} variant="left" />
       <div className="absolute inset-x-6 bottom-[8svh] md:inset-x-auto md:bottom-auto md:left-[7vw] md:top-1/2 md:w-[min(46vw,580px)] md:-translate-y-1/2">
-        <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-label sm:text-xs" style={{ color: world.color, ...(rise(t, w, 0) ?? {}) }}>
+        <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-label sm:text-xs" style={{ color: world.color, ...rise(t, w, 0) }}>
           <span className="h-2 w-2 rounded-full" style={{ background: world.color, boxShadow: `0 0 16px ${world.color}` }} />
           World {world.index} · {world.worldName}
         </p>
-        <h2 className="mt-4 font-display text-5xl font-semibold leading-[0.95] tracking-tight text-fg sm:text-6xl lg:text-8xl" style={rise(t, w, 0.15, 0.9, 40) ?? undefined}>
+        <h2 className="mt-4 font-display text-5xl font-semibold leading-[0.95] tracking-tight text-fg sm:text-6xl lg:text-8xl" style={rise(t, w, 0.15, 0.9, 40)}>
           {world.title}
         </h2>
-        <p className="mt-4 font-display text-xl text-fg/90 sm:text-3xl" style={rise(t, w, 0.4) ?? undefined}>
+        <p className="mt-4 font-display text-xl text-fg/90 sm:text-3xl" style={rise(t, w, 0.4)}>
           {world.line}
         </p>
         <ol className="mt-6 space-y-1.5 border-l pl-5" style={{ borderColor: `${world.color}66` }}>
@@ -150,7 +151,7 @@ function WorldCard({ t, index }: { t: number; index: number }) {
             <li
               key={e.id}
               className="flex items-baseline gap-4 font-display text-base text-fg sm:text-xl lg:text-2xl"
-              style={rise(t, w, 0.9 + i * 0.22, 0.7, 18) ?? { opacity: 0 }}
+              style={rise(t, w, 0.9 + i * 0.22, 0.7, 18)}
             >
               <span className="font-mono text-[11px] text-fg-faint">{String(i + 1).padStart(2, '0')}</span>
               {e.name}
@@ -166,7 +167,7 @@ function Counter({ t, w, delay, value, label }: { t: number; w: Window; delay: n
   const p = window_(t, w, delay, 1.6);
   const shown = p ? Math.round(p.enter * value) : 0;
   return (
-    <div className="text-center" style={rise(t, w, delay, 0.8) ?? { opacity: 0 }}>
+    <div className="text-center" style={rise(t, w, delay, 0.8)}>
       <div className="font-display text-5xl font-medium tabular-nums text-fg sm:text-7xl">{String(shown).padStart(2, '0')}</div>
       <div className="mt-2 font-mono text-[11px] uppercase tracking-label text-fg-muted">{label}</div>
     </div>
@@ -180,13 +181,13 @@ function DatesCard({ t }: { t: number }) {
     <>
       <Scrim t={t} w={w} variant="centre" />
       <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pb-[12svh] text-center">
-        <p className="font-mono text-[11px] uppercase tracking-label text-gold sm:text-xs" style={rise(t, w, 0) ?? undefined}>
+        <p className="font-mono text-[11px] uppercase tracking-label text-gold sm:text-xs" style={rise(t, w, 0)}>
           Save the dates
         </p>
-        <h2 className="mt-5 font-display text-4xl font-semibold tracking-tight text-fg sm:text-6xl lg:text-8xl" style={rise(t, w, 0.2, 0.9, 36) ?? undefined}>
+        <h2 className="mt-5 font-display text-4xl font-semibold tracking-tight text-fg sm:text-6xl lg:text-8xl" style={rise(t, w, 0.2, 0.9, 36)}>
           {siteConfig.dates.display}
         </h2>
-        <p className="mt-4 font-display text-lg text-fg-muted sm:text-2xl" style={rise(t, w, 0.5) ?? undefined}>
+        <p className="mt-4 font-display text-lg text-fg-muted sm:text-2xl" style={rise(t, w, 0.5)}>
           {siteConfig.institution}, {siteConfig.campus}
         </p>
         <div className="mt-12 flex items-start gap-10 sm:gap-16">
