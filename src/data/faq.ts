@@ -37,9 +37,9 @@ export const faqData: FAQItem[] = [
   },
   {
     id: 'olympics',
-    question: 'What is the NEXUS Olympics?',
+    question: 'What is the Tech Olympics?',
     answer:
-      'A two-day team championship made of surprise rounds. The challenges are kept secret until they begin, and points add up across both days towards the trophy.',
+      'A two-day team competition. Day 1, The Reel Rush (25 November), tests your movie and music knowledge. Day 2, The Mind Games (26 November), is about logic and AI-powered creativity. Teams of exactly 4 can enter one day or both, and each day has three events.',
   },
   {
     id: 'contact',

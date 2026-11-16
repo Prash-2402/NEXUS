@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowUpRight, X } from 'lucide-react';
 import { worlds, type NexusEvent } from '../data/events';
 
@@ -60,10 +61,12 @@ export function EventDetailsModal({ event, onClose, onRegister }: EventDetailsMo
     ['Venue', shown.venue],
     ['Format', shown.format],
     ['Eligibility', shown.eligibility],
+    ...(shown.prize ? ([['Prize pool', shown.prize]] as Array<[string, React.ReactNode]>) : []),
     ...(shown.poc ? ([['Coordinators', shown.poc]] as Array<[string, React.ReactNode]>) : []),
   ];
 
-  return (
+  // Rendered at the top of the page so it sits above the navbar, not inside the Events section.
+  return createPortal(
     <div
       className={`fixed inset-0 z-[60] flex items-end justify-center bg-ink-950/70 backdrop-blur-md transition-opacity duration-300 sm:items-center sm:p-6 ${
         visible ? 'opacity-100' : 'opacity-0'
@@ -133,6 +136,7 @@ export function EventDetailsModal({ event, onClose, onRegister }: EventDetailsMo
           <p className="mt-4 text-center text-xs text-fg-faint sm:text-left">Registration opens in a new tab.</p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

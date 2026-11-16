@@ -44,9 +44,14 @@ ending in the live site. It opens on a locked screen; pressing **Launch** (or Sp
   Interactive event) in `public/launch/photos/01-25.webp`. Group and action shots only, each checked for
   sharpness. The first 14 drift past in the memory chapter, the rest are cut on the beat.
   To swap one, replace the file and keep the name.
-- **Beat:** synthesised in the browser at 120 BPM (`src/launch/beat.ts`), no audio files or licences.
-  Every logo lands on a drop: a build, half a beat of silence, then a distorted 808 boom with a mid
-  "thud" so it is heard on laptop and projector speakers. A limiter on the output prevents clipping.
+- **Music:** a 120 BPM track in A minor built in the browser (`src/launch/beat.ts`), no audio files or licences:
+  a plucked melody (Am – F – C – G) over a heartbeat for the memories, four-on-the-floor with claps and 808s
+  for the montage, and a half-time trap groove for the drops. Every logo and every planet lands on a drop:
+  a build, half a beat of silence, then a distorted 808 boom. Nothing sustains, so there is no hum, and a
+  limiter on the output prevents clipping.
+- **Transitions:** cinema bars that snap open on the drop, zoom-through photo cuts with a red/cyan slice glitch,
+  "NEXUS IS BACK" letters flying in from all over, whip-pans with a shockwave ring and light sweep on each logo,
+  event names that decode in on the beat, a short glitch on every impact, and film grain throughout.
 - **F** fullscreen. **→** jumps to the next chapter (for rehearsals). **Esc** skips straight to the site.
 - Works at `/launch` on Vercel (`vercel.json`) and Netlify (`public/_redirects`), and at `/#launch` anywhere.
 - Open it a minute early so the planet textures load, then leave it on the locked screen.

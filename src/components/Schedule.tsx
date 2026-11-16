@@ -82,14 +82,14 @@ export function Schedule({ onRegister }: ScheduleProps) {
             aria-hidden="true"
           />
 
-          {scheduleDays.map((day) => {
+          {/* Only days that have events; empty dates are left out */}
+          {scheduleDays.filter((day) => day.items.length > 0).map((day) => {
             const isToday = day.date === today;
-            const empty = day.items.length === 0;
             return (
               <li
                 key={day.date}
                 data-day
-                className={cn('group relative flex gap-5 sm:gap-8', empty ? 'pb-6' : 'pb-10')}
+                className="group relative flex gap-5 pb-10 sm:gap-8"
               >
                 <div className="relative z-10 w-14 shrink-0 text-center sm:w-20">
                   <div
@@ -99,7 +99,7 @@ export function Schedule({ onRegister }: ScheduleProps) {
                       isToday && 'border-gold/70',
                     )}
                   >
-                    <span className={cn('font-display text-xl font-semibold leading-none transition-colors duration-700', empty ? 'text-fg-faint' : 'text-fg-muted group-[.is-past]:text-fg')}>
+                    <span className="font-display text-xl font-semibold leading-none text-fg-muted transition-colors duration-700 group-[.is-past]:text-fg">
                       {day.day}
                     </span>
                     <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.15em] text-fg-faint">{day.month}</span>
@@ -112,11 +112,6 @@ export function Schedule({ onRegister }: ScheduleProps) {
                     {isToday && <span className="rounded-full bg-gold/15 px-2 py-0.5 text-gold">Today</span>}
                   </p>
 
-                  {empty ? (
-                    <p className="mt-2 text-sm text-fg-faint" data-day-reveal>
-                      No events scheduled
-                    </p>
-                  ) : (
                     <div className="mt-3 space-y-3">
                       {day.items.map((item) => (
                         <div
@@ -149,7 +144,6 @@ export function Schedule({ onRegister }: ScheduleProps) {
                         </div>
                       ))}
                     </div>
-                  )}
                 </div>
               </li>
             );

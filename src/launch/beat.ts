@@ -1,33 +1,95 @@
 /**
- * The beat for the launch film, as a list of timed drum and bass hits.
- * Built from the chapter timeline so the music always lines up with the picture.
+ * The music for the launch film: a 120 BPM track in A minor, written as timed events.
+ * Built from the chapter timeline so every hit lines up with the picture.
+ *
+ * Nothing sustains: melody is plucked, bass is short 808 notes, so there is no hum.
+ * Chords change every bar (2s): Am – F – C – G.
  */
 
 import { BEAT, CH, IMPACTS } from './timeline';
 
-export type BeatKind = 'kick' | 'kickSoft' | 'snare' | 'hat' | 'bass' | 'impact' | 'riser' | 'drop';
+export type BeatKind =
+  | 'kick'
+  | 'kickSoft'
+  | 'snare'
+  | 'clap'
+  | 'hat'
+  | 'bass'
+  | 'sub'
+  | 'pluck'
+  | 'impact'
+  | 'riser'
+  | 'drop';
 
 export interface BeatEvent {
   at: number;
   kind: BeatKind;
-  /** snare: level 0..1 · bass: frequency in Hz · riser: length in seconds */
+  /** pitch in Hz (bass, sub, pluck) · level 0..1 (snare) · length in s (riser) */
   value?: number;
+  /** loudness 0..1 for plucks and hats */
+  level?: number;
 }
 
 const events: BeatEvent[] = [];
-const BASS_ROOTS = [55, 55, 65.41, 49]; // A, A, C, G: one root per bar
+const add = (at: number, kind: BeatKind, value?: number, level?: number) => events.push({ at, kind, value, level });
 
-/** Four-on-the-floor groove between two times. */
-function groove(from: number, to: number, opts: { hats?: boolean; bass?: boolean } = {}) {
-  for (let t = from, beat = 0; t < to - 1e-6; t += BEAT, beat++) {
-    events.push({ at: t, kind: 'kick' });
-    if (beat % 2 === 1) events.push({ at: t, kind: 'snare', value: 1 });
-    if (opts.hats) events.push({ at: t + BEAT / 2, kind: 'hat' });
-    if (opts.bass) {
-      const root = BASS_ROOTS[Math.floor(beat / 4) % BASS_ROOTS.length];
-      events.push({ at: t, kind: 'bass', value: root });
-      events.push({ at: t + BEAT / 2, kind: 'bass', value: beat % 4 === 3 ? root * 1.5 : root });
-    }
+const BAR = BEAT * 4;
+const SIXTEENTH = BEAT / 4;
+
+/* ---------- Harmony ---------- */
+
+// Am, F, C, G: chord tones for the plucks and an 808 root for each bar
+const CHORDS = [
+  { root: 55, tones: [220, 261.63, 329.63, 440] },
+  { root: 43.65, tones: [174.61, 220, 261.63, 349.23] },
+  { root: 65.41, tones: [261.63, 329.63, 392, 523.25] },
+  { root: 49, tones: [196, 246.94, 293.66, 392] },
+];
+const chordAt = (t: number) => CHORDS[Math.floor(t / BAR + 1e-6) % CHORDS.length];
+
+// Arpeggio shape: up through the chord and back
+const ARP = [0, 1, 2, 3, 2, 1, 2, 1];
+
+function arp(from: number, to: number, step: number, level: number) {
+  let i = 0;
+  for (let t = from; t < to - 1e-6; t += step, i++) {
+    const c = chordAt(t);
+    add(t, 'pluck', c.tones[ARP[i % ARP.length]], level);
+  }
+}
+
+/* ---------- Drum patterns ---------- */
+
+/** Four-on-the-floor: kick every beat, clap on 2 and 4, an 808 on each kick. */
+function fourFloor(from: number, to: number, opts: { clap?: boolean; sub?: boolean; hats?: boolean } = {}) {
+  for (let t = from, b = 0; t < to - 1e-6; t += BEAT, b++) {
+    add(t, 'kick');
+    if (opts.clap && b % 2 === 1) add(t, 'clap');
+    if (opts.sub) add(t, 'sub', chordAt(t).root);
+    if (opts.hats) add(t + BEAT / 2, 'hat', undefined, 0.8);
+  }
+}
+
+/**
+ * Half-time trap bar: kick on 1 and the "and" of 2, clap on 3, 808 on the kicks,
+ * eighth-note hats with a quick roll at the end of every second bar.
+ */
+function trap(from: number, to: number) {
+  for (let bar = from, n = 0; bar < to - 1e-6; bar += BAR, n++) {
+    const root = chordAt(bar).root;
+    const end = Math.min(bar + BAR, to);
+    const hit = (offset: number, kind: BeatKind, value?: number, level?: number) => {
+      if (bar + offset < end - 1e-6) add(bar + offset, kind, value, level);
+    };
+    hit(0, 'kick');
+    hit(0, 'sub', root);
+    hit(BEAT * 1.5, 'kick');
+    hit(BEAT * 1.5, 'sub', root);
+    hit(BEAT * 2, 'clap');
+    hit(BEAT * 3.25, 'kick');
+    hit(BEAT * 3.25, 'sub', root * 1.5);
+    for (let h = 0; h < 8; h++) hit(h * (BEAT / 2), 'hat', undefined, h % 2 ? 0.6 : 1);
+    if (n % 2 === 1) for (let r = 0; r < 4; r++) hit(BEAT * 3 + r * SIXTEENTH, 'hat', undefined, 0.5 + r * 0.15);
   }
 }
 
@@ -36,68 +98,77 @@ function roll(from: number, to: number) {
   let t = from;
   while (t < to - 1e-6) {
     const p = (t - from) / (to - from);
-    events.push({ at: t, kind: 'snare', value: 0.3 + p * 0.7 });
-    t += p < 0.5 ? BEAT / 2 : BEAT / 4;
+    add(t, 'snare', 0.3 + p * 0.7);
+    t += p < 0.5 ? BEAT / 2 : SIXTEENTH;
   }
 }
 
-// Memory: a slow heartbeat
-for (let t = CH.memory + 2; t < CH.montage; t += 2) events.push({ at: t, kind: 'kickSoft' });
-
-// Montage: the beat arrives, then builds into the blackout
-groove(CH.montage, CH.montage + 4);
-groove(CH.montage + 4, CH.blackout - 2, { bass: true, hats: true });
-for (let t = CH.blackout - 2; t < CH.blackout; t += BEAT) events.push({ at: t, kind: 'kick' });
-roll(CH.blackout - 2, CH.blackout);
-events.push({ at: CH.blackout - 4, kind: 'riser', value: 4 });
-
-// Blackout: silence, one hit under the line, then a riser into the drop
-events.push({ at: CH.blackout + 2, kind: 'impact' });
-events.push({ at: CH.drop - 2, kind: 'riser', value: 2 });
-
-/**
- * One drop section, trailer style: it lands with a DROP, the beat rides for a few
- * beats, then a build (kicks doubling up, snare roll, rising tone), then a half-beat
- * of total silence so the next drop hits hard.
- */
-function dropSection(from: number, to: number) {
-  events.push({ at: from, kind: 'drop' });
-  const buildStart = to - 2;
-  groove(from, buildStart, { bass: true, hats: true });
-  // build: kicks on every beat, then every half beat
-  for (let t = buildStart; t < to - 1 - 1e-6; t += BEAT) events.push({ at: t, kind: 'kick' });
-  for (let t = to - 1; t < to - BEAT - 1e-6; t += BEAT / 2) events.push({ at: t, kind: 'kick' });
-  roll(buildStart, to - BEAT);
-  events.push({ at: buildStart, kind: 'riser', value: 2 - BEAT });
-  // to - BEAT .. to: silence
+/** Build into a drop, then leave `gap` seconds of silence before `to`. */
+function build(from: number, to: number, gap = BEAT) {
+  for (let t = from; t < to - gap - 1e-6; t += t < to - 1 ? BEAT : BEAT / 2) add(t, 'kick');
+  roll(from, to - gap);
+  add(from, 'riser', to - gap - from);
 }
 
-// NEXUS IS BACK → CHRIST → Department → CAADS → worlds: a drop on every one
+/* ---------- The track ---------- */
+
+// Memory: a soft plucked melody over a heartbeat
+arp(CH.memory + 0.5, CH.montage, BEAT, 0.35);
+for (let t = CH.memory + 2; t < CH.montage; t += BAR) add(t, 'kickSoft');
+
+// Montage: melody doubles, the beat arrives, then builds into the blackout
+arp(CH.montage, CH.blackout - 2, BEAT / 2, 0.45);
+fourFloor(CH.montage, CH.montage + 4);
+fourFloor(CH.montage + 4, CH.blackout - 2, { clap: true, sub: true, hats: true });
+build(CH.blackout - 2, CH.blackout, 0);
+
+// Blackout: silence, one hit under the line, then a riser into the drop
+add(CH.blackout + 2, 'impact');
+add(CH.drop - 2, 'riser', 2);
+
+/** Drop, a bar of trap with the melody on top, then a build and a silent gap. */
+function dropSection(from: number, to: number) {
+  add(from, 'drop');
+  const buildStart = to - BAR + BEAT;
+  trap(from, buildStart);
+  arp(from, buildStart, BEAT / 2, 0.3);
+  build(buildStart, to);
+}
+
+// NEXUS IS BACK → CHRIST → Department → CAADS: a drop on every one
 dropSection(CH.drop, CH.institution);
 for (let i = 0; i < 3; i++) {
   const at = CH.institution + i * CH.logoDur;
   dropSection(at, at + CH.logoDur);
 }
 
-// Worlds: lands on a drop, then full beat
-events.push({ at: CH.worlds, kind: 'drop' });
-groove(CH.worlds, CH.converge, { bass: true, hats: true });
-
-// Convergence: stripped back to one kick a bar
-for (let t = CH.converge; t < CH.dates; t += 2) {
-  events.push({ at: t, kind: 'kick' });
-  events.push({ at: t, kind: 'bass', value: BASS_ROOTS[0] });
+// Worlds: a drop at every planet, trap groove, a one-beat break before the next
+for (let i = 0; i < 3; i++) {
+  const from = CH.worlds + i * CH.worldDur;
+  const to = from + CH.worldDur;
+  add(from, 'drop');
+  trap(from, to - BEAT * 2);
+  arp(from, to - BEAT * 2, BEAT / 2, 0.3);
+  roll(to - BEAT * 2, to - BEAT);
 }
 
-// Dates: beat back in, then a build while the logo assembles
-groove(CH.dates, CH.logo, { bass: true, hats: true });
-for (let t = CH.logo; t < CH.hit; t += BEAT) events.push({ at: t, kind: 'kick' });
-roll(CH.hit - 1.5, CH.hit);
-events.push({ at: CH.logo, kind: 'riser', value: CH.hit - CH.logo });
+// Convergence: the melody alone, with a kick and an 808 once a bar
+arp(CH.converge, CH.dates, BEAT / 2, 0.45);
+for (let t = CH.converge; t < CH.dates; t += BAR) {
+  add(t, 'kick');
+  add(t, 'sub', chordAt(t).root);
+}
 
-// Final drop under the logo
-groove(CH.hit, CH.hit + 4.5, { bass: true, hats: true });
+// Dates: the groove returns
+trap(CH.dates, CH.logo);
+arp(CH.dates, CH.logo, BEAT / 2, 0.35);
 
-IMPACTS.forEach((at) => events.push({ at, kind: 'impact' }));
+// The logo assembles over a build, then the final drop
+build(CH.logo, CH.hit);
+add(CH.hit, 'drop');
+trap(CH.hit, CH.hit + BAR * 2);
+arp(CH.hit, CH.hit + BAR * 2 + BEAT * 2, BEAT / 2, 0.35);
+
+IMPACTS.forEach((at) => add(at, 'impact'));
 
 export const BEAT_EVENTS: BeatEvent[] = events.sort((a, b) => a.at - b.at);

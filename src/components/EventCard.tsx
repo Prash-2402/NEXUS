@@ -1,5 +1,5 @@
 import type { PointerEvent } from 'react';
-import { ArrowUpRight, Clock, MapPin } from 'lucide-react';
+import { ArrowUpRight, Clock, MapPin, Trophy } from 'lucide-react';
 import { formatEventDates, formatEventTime, worlds, type NexusEvent } from '../data/events';
 
 interface EventCardProps {
@@ -66,6 +66,13 @@ export function EventCard({ event, index, onOpenDetails, onRegister }: EventCard
           <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-fg-faint" />
           <dd>{event.venue}</dd>
         </div>
+        {event.prize && (
+          <div className="flex items-start gap-1.5">
+            <dt className="sr-only">Prize pool</dt>
+            <Trophy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold/80" />
+            <dd className="text-fg">{event.prize} prize pool</dd>
+          </div>
+        )}
       </dl>
 
       <div className="relative mt-auto flex items-center gap-3 pt-7">

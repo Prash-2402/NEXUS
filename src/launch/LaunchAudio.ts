@@ -40,7 +40,7 @@ export class LaunchAudio {
     comp.attack.value = 0.004;
     comp.release.value = 0.18;
     this.drums = this.ctx.createGain();
-    this.drums.gain.value = 0.85;
+    this.drums.gain.value = 0.62;
     this.drums.connect(comp).connect(this.master);
 
     // 4 seconds of white noise, reused by every noise voice
@@ -91,7 +91,13 @@ export class LaunchAudio {
       case 'snare':
         return this.snare(at, ev.value ?? 1);
       case 'hat':
-        return this.hat(at);
+        return this.hat(at, ev.level ?? 1);
+      case 'clap':
+        return this.clap(at);
+      case 'sub':
+        return this.sub(at, ev.value ?? 55);
+      case 'pluck':
+        return this.pluck(at, ev.value ?? 220, ev.level ?? 0.4);
       case 'bass':
         return this.bassNote(at, ev.value ?? 55);
       case 'impact':
@@ -205,8 +211,8 @@ export class LaunchAudio {
     n.connect(bp).connect(lp).connect(g).connect(this.drums!);
   }
 
-  /** A soft, muted shaker on the off-beat (no bright cymbal). */
-  private hat(at: number) {
+  /** A soft, muted shaker (no bright cymbal). */
+  private hat(at: number, level: number) {
     const ctx = this.ctx!;
     const n = this.noise(at, 0.08);
     if (!n) return;
@@ -215,8 +221,68 @@ export class LaunchAudio {
     bp.frequency.value = 2400;
     bp.Q.value = 1.2;
     const g = ctx.createGain();
-    this.env(g, at, 0.002, 0.035, 0.05);
+    this.env(g, at, 0.002, 0.035 * level, 0.05);
     n.connect(bp).connect(g).connect(this.drums!);
+  }
+
+  /** Clap: three quick bursts of filtered noise, kept below 3 kHz so it never hisses. */
+  private clap(at: number) {
+    const ctx = this.ctx!;
+    [0, 0.012, 0.024].forEach((offset, i) => {
+      const n = this.noise(at + offset, 0.2);
+      if (!n) return;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1100;
+      bp.Q.value = 1.1;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 3000;
+      const g = ctx.createGain();
+      this.env(g, at + offset, 0.001, i === 2 ? 0.42 : 0.25, i === 2 ? 0.16 : 0.03);
+      n.connect(bp).connect(lp).connect(g).connect(this.drums!);
+    });
+  }
+
+  /** 808: a short sub note that glides down into pitch, driven so it is heard on small speakers. */
+  private sub(at: number, hz: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(hz * 1.6, at);
+    o.frequency.exponentialRampToValueAtTime(hz, at + 0.06);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.24, at + 0.004);
+    g.gain.setValueAtTime(0.24, at + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.55);
+    o.connect(g).connect(this.drive());
+    o.start(at);
+    o.stop(at + 0.6);
+  }
+
+  /** Plucked synth note for the melody: bright attack, quick decay, nothing sustains. */
+  private pluck(at: number, hz: number, level: number) {
+    const ctx = this.ctx!;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(2600, at);
+    lp.frequency.exponentialRampToValueAtTime(500, at + 0.3);
+    const g = ctx.createGain();
+    this.env(g, at, 0.003, 0.12 * level, 0.42);
+    lp.connect(g).connect(this.master!);
+    [
+      ['triangle', 0],
+      ['sine', 7],
+    ].forEach(([type, detune]) => {
+      const o = ctx.createOscillator();
+      o.type = type as OscillatorType;
+      o.frequency.value = hz;
+      o.detune.value = detune as number;
+      o.connect(lp);
+      o.start(at);
+      o.stop(at + 0.5);
+    });
   }
 
   private bassNote(at: number, hz: number) {
