@@ -71,7 +71,7 @@ export const siteConfig: SiteConfig = {
       'family-feud': 'https://forms.google.com/nexus-family-feud-form-placeholder',
       esports: 'https://docs.google.com/forms/d/1NXdPEIEq1r5AtzT6QvjDW6qaD7cldZoCFE2VGwXUAi0/edit',
       'shark-tank': 'https://docs.google.com/forms/d/1yHUvcnZAuiarnVDrdavZeaxHrwm3mAQoGfveLQFUi9E/edit',
-      song: 'https://forms.google.com/nexus-song-form-placeholder',
+      song: 'https://docs.google.com/forms/d/1DEOiFEZq7EzPTP5ZNHLlaXewkQWNheGInQ7aJNkM_mI/edit',
       dance: 'https://docs.google.com/forms/d/1yh3D4QocibpdEcgwiGu4xYguVG7PWRcByP9ZYxsIO14/edit',
       'talent-show': 'https://docs.google.com/forms/d/15yKqQ-aY_3NswbYt9yvBxIYgDuLlPPvN-BccljGkBqw/edit',
     },
