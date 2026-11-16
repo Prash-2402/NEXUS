@@ -23,7 +23,7 @@ the reel frame and the schedule timeline.
 
 ## Stage launch (`/launch`)
 
-A hidden page for the launch event: a 95-second "NEXUS is back" film with a beat and voiceover,
+A hidden page for the launch event: a 95-second "NEXUS is back" film set to a beat,
 ending in the live site. It opens on a locked screen; pressing **Launch** (or Space / Enter) starts it.
 
 | Time | Chapter |
@@ -47,9 +47,6 @@ ending in the live site. It opens on a locked screen; pressing **Launch** (or Sp
 - **Beat:** synthesised in the browser at 120 BPM (`src/launch/beat.ts`), no audio files or licences.
   Every logo lands on a drop: a build, half a beat of silence, then a distorted 808 boom with a mid
   "thud" so it is heard on laptop and projector speakers. A limiter on the output prevents clipping.
-- **Voiceover:** pre-generated clips in `public/launch/vo/` (Microsoft neural voice, made with
-  `scripts/generate-voiceover.py`). If you change a line in `VOICE_LINES` (`src/launch/timeline.ts`),
-  change it in the script too and re-run it. A missing clip falls back to the browser's speech voice.
 - **F** fullscreen. **→** jumps to the next chapter (for rehearsals). **Esc** skips straight to the site.
 - Works at `/launch` on Vercel (`vercel.json`) and Netlify (`public/_redirects`), and at `/#launch` anywhere.
 - Open it a minute early so the planet textures load, then leave it on the locked screen.

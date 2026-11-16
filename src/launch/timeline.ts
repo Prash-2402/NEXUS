@@ -1,12 +1,12 @@
 /**
  * The launch film ("NEXUS is back"), in seconds after the countdown ends.
  * The 3D camera path (SpaceEngine.launchFrame), the title cards (Cinematic),
- * the beat (beat.ts) and the voiceover all read from here.
+ * and the beat (beat.ts) all read from here.
  *
  * Everything sits on a 120 BPM grid: one beat is 0.5s, one bar is 2s.
  */
 
-import { worldOrder, worlds } from '../data/events';
+import { worldOrder } from '../data/events';
 
 export const COUNTDOWN = 10;
 export const BEAT = 0.5;
@@ -94,29 +94,4 @@ export const IMPACTS: number[] = [
   ...CONVERGE_LINES.map((l) => l.at),
   CH.dates,
   CH.hit,
-];
-
-/**
- * Voiceover: clip N in public/launch/vo/ is played for line N.
- * Keep this list in step with scripts/generate-voiceover.py.
- */
-const ordinal = ['one', 'two', 'three'];
-
-export const VOICE_LINES: Array<{ at: number; text: string }> = [
-  { at: 1.2, text: 'Last year, we built something.' },
-  { at: 5.0, text: 'A stage. A crowd. A feeling.' },
-  { at: 13.0, text: 'You remember the nights.' },
-  { at: 16.0, text: 'The noise. The wins.' },
-  { at: BLACKOUT_LINE.at + 0.2, text: 'It never really ended.' },
-  { at: CH.drop + 0.1, text: 'Nexus. Is. Back.' },
-  { at: INSTITUTION_CARDS.christ.at + 0.15, text: 'Hosted at CHRIST, Deemed to be University.' },
-  { at: INSTITUTION_CARDS.department.at + 0.15, text: 'The Department of AI and Data Science Engineering.' },
-  { at: INSTITUTION_CARDS.caads.at + 0.15, text: 'Christites Association of AI and Data Science presents.' },
-  ...worldOrder.map((id, i) => ({
-    at: worldWindow(i).at + 0.5,
-    text: `World ${ordinal[i]}. ${worlds[id].title}. ${worlds[id].line}`,
-  })),
-  ...CONVERGE_LINES.map((l) => ({ at: l.at, text: l.text })),
-  { at: CH.dates + 0.4, text: 'Fifteen days. Starting twenty-first November.' },
-  { at: CH.hit + 0.4, text: 'Nexus twenty twenty-six. Where worlds converge.' },
 ];

@@ -7,9 +7,8 @@ import { cn } from '../lib/utils';
 import { Cinematic } from './Cinematic';
 import { LaunchAudio } from './LaunchAudio';
 import { LogoParticles } from './LogoParticles';
-import { CH, COUNTDOWN, VOICE_LINES } from './timeline';
+import { CH, COUNTDOWN } from './timeline';
 import { BEAT_EVENTS } from './beat';
-import { Voiceover } from './Voiceover';
 import { PHOTOS } from './photos';
 
 /**
@@ -67,8 +66,6 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
   const audioRef = useRef(new LaunchAudio());
   /** Next beat event to schedule. */
   const beatIndex = useRef(0);
-  const voiceRef = useRef<Voiceover>();
-  if (!voiceRef.current) voiceRef.current = new Voiceover(VOICE_LINES.length);
   const particlesRef = useRef<LogoParticles | null>(null);
   const phaseRef = useRef<Phase>('idle');
   const startRef = useRef(0);
@@ -142,7 +139,6 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     finished.current = true;
     cancelAnimationFrame(rafRef.current);
     audioRef.current.dispose();
-    voiceRef.current?.dispose();
     onFinished();
   }, [onFinished]);
 
@@ -182,14 +178,6 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
         const ev = BEAT_EVENTS[beatIndex.current++];
         if (ev.at >= t - 0.05) audio.schedule(ev, audio.now + (ev.at - t));
       }
-      // Voiceover. A line that is already well past (after a chapter skip) is dropped, not spoken late.
-      VOICE_LINES.forEach((line, i) => {
-        if (t >= line.at) {
-          once(`vo-${i}`, () => {
-            if (t < line.at + 1.5) voiceRef.current?.speak(i, line.text);
-          });
-        }
-      });
       if (t >= CH.logo) once('particles', () => particles?.assemble(t));
       if (t >= CH.hit) {
         once('hit', () => {
@@ -237,7 +225,6 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     const audio = audioRef.current;
     audio.init();
     audio.setMuted(muted);
-    voiceRef.current?.setEnabled(!muted);
     startRef.current = performance.now();
     lastRef.current = startRef.current;
     audio.tick(COUNTDOWN);
@@ -257,7 +244,6 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
       finish();
       return;
     }
-    voiceRef.current?.stop();
     jumpTo(CH.handoff);
   }, [finish, handoff, jumpTo]);
 
@@ -266,7 +252,6 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     const now = (performance.now() - startRef.current) / 1000 - COUNTDOWN;
     const next = CHAPTERS.find((c) => c > now + 0.05);
     if (next !== undefined) {
-      voiceRef.current?.stop();
       jumpTo(next);
     }
   }, [jumpTo]);
@@ -304,7 +289,6 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     const next = !muted;
     setMuted(next);
     audioRef.current.setMuted(next);
-    voiceRef.current?.setEnabled(!next);
   };
 
   const idle = phase === 'idle';
@@ -361,7 +345,7 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
           <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between text-fg-muted">
             <button onClick={toggleMute} className="flex items-center gap-2 text-xs transition-colors hover:text-fg">
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              Sound and voice {muted ? 'off' : 'on'}
+              Sound {muted ? 'off' : 'on'}
             </button>
             <button onClick={toggleFullscreen} className="flex items-center gap-2 text-xs transition-colors hover:text-fg">
               {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}

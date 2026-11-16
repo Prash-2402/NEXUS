@@ -189,8 +189,25 @@ const MEMORY_LINES: TimedText[] = [
 
 function Blackout({ t }: { t: number }) {
   if (t < CH.blackout || t >= CH.drop) return null;
+  // The beat cuts out and the NEXUS banner photo holds in the silence, then fades to black.
+  const banner = PHOTOS[2];
+  const local = t - CH.blackout;
+  const holdEnd = BLACKOUT_LINE.at - CH.blackout - 0.15;
+  const bannerAlpha = banner ? clamp01((holdEnd - local) / 0.5) : 0;
   return (
     <div className="absolute inset-0 bg-black">
+      {bannerAlpha > 0 && (
+        <div className="absolute inset-0" style={{ opacity: bannerAlpha }}>
+          {/* blurred copy fills the screen behind the full, uncropped photo */}
+          <img src={banner} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl" />
+          <img
+            src={banner}
+            alt=""
+            className="absolute inset-0 h-full w-full object-contain"
+            style={{ transform: `scale(${1 + local * 0.025})` }}
+          />
+        </div>
+      )}
       <Line t={t} line={BLACKOUT_LINE} className="top-1/2 -translate-y-1/2 text-2xl text-fg/90 sm:text-4xl" />
     </div>
   );
