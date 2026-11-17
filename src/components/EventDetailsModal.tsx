@@ -32,10 +32,12 @@ export function EventDetailsModal({ event, onClose, onRegister }: EventDetailsMo
     if (!event) return;
     const previous = document.activeElement as HTMLElement | null;
     document.body.style.overflow = 'hidden';
-    closeRef.current?.focus();
+    // the dialog mounts on the next frame, so focus it then
+    const focusFrame = requestAnimationFrame(() => closeRef.current?.focus());
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
     return () => {
+      cancelAnimationFrame(focusFrame);
       document.body.style.overflow = '';
       window.removeEventListener('keydown', onKey);
       previous?.focus();

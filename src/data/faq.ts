@@ -44,6 +44,6 @@ export const faqData: FAQItem[] = [
   {
     id: 'contact',
     question: 'Who do I contact with questions?',
-    answer: `Email ${siteConfig.socials.contactEmail} or message ${siteConfig.socials.instagramHandle} on Instagram. Each event also lists its student coordinators.`,
+    answer: `Message ${siteConfig.socials.instagramHandle} on Instagram. Each event also lists its student coordinators.`,
   },
 ];

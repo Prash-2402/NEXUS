@@ -108,7 +108,7 @@ export function Schedule({ onRegister }: ScheduleProps) {
 
                 <div className="min-w-0 flex-1 pt-1">
                   <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.16em] text-fg-faint" data-day-reveal>
-                    {day.weekday} · Day {String(day.dayNumber).padStart(2, '0')}
+                    {day.weekday}
                     {isToday && <span className="rounded-full bg-gold/15 px-2 py-0.5 text-gold">Today</span>}
                   </p>
 

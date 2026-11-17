@@ -29,7 +29,6 @@ export interface SiteConfig {
   socials: {
     instagramUrl: string;
     instagramHandle: string;
-    contactEmail: string;
     websiteUrl: string;
   };
   branding: {
@@ -73,14 +72,13 @@ export const siteConfig: SiteConfig = {
       'talent-show': 'https://docs.google.com/forms/d/e/1FAIpQLSeax1p9TLbqqrwmQgzfocbLwBfUsCWaE9mIhnaFnSYiNMm4bQ/viewform',
       dance: 'https://docs.google.com/forms/d/e/1FAIpQLScbSJT-i-AU6A2Oh7nq95aCbBBWc_eblaCnfDrC0Az7NwtkTw/viewform',
       'tableau-workshop': '',
-      'ai-workshop': '',
+      'ai-workshop': 'https://docs.google.com/forms/d/e/1FAIpQLScKHVaUhfcBMx2xaUOnn2HdcQlHPA1lHZnPnCpCYULaYhmBVA/viewform',
       'nexus-olympics': 'https://docs.google.com/forms/d/e/1FAIpQLSdLITNC1UG5-b-77-cuxTodvyIiL47KmDVHcECLgRJp6ZiqGA/viewform',
     },
   },
   socials: {
     instagramUrl: 'https://www.instagram.com/caads.adse/',
     instagramHandle: '@caads.adse',
-    contactEmail: 'caads@christuniversity.in',
     websiteUrl: 'https://nexus.christuniversity.in',
   },
   branding: {

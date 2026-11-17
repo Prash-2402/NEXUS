@@ -1,14 +1,8 @@
-import { ArrowUp, ArrowUpRight, Instagram, Mail, MapPin } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, Instagram, MapPin } from 'lucide-react';
 import { siteConfig } from '../config/site';
 
 export function Footer() {
   const contacts = [
-    {
-      icon: Mail,
-      label: 'Email',
-      value: siteConfig.socials.contactEmail,
-      href: `mailto:${siteConfig.socials.contactEmail}`,
-    },
     {
       icon: Instagram,
       label: 'Instagram',

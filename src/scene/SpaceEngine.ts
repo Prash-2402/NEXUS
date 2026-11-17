@@ -19,6 +19,7 @@ import {
   Scene,
   ShaderMaterial,
   SphereGeometry,
+  ImageBitmapLoader,
   Texture,
   TextureLoader,
   Vector3,
@@ -100,6 +101,8 @@ const KEY_LIGHT = new Vector3(-0.85, 0.4, 0.45).normalize();
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+/** Ease from 0 to 1 that starts at slope `m0` (to continue an existing motion) and settles at 0. */
+const hermite = (u: number, m0: number) => (u * u * u - 2 * u * u + u) * m0 + (3 * u * u - 2 * u * u * u);
 
 /** Everything one frame needs; the scroll journey and the launch sequence each produce one and they blend. */
 class FrameState {
@@ -247,6 +250,8 @@ export class SpaceEngine {
 
   dispose() {
     this.stop();
+    window.clearTimeout(this.warmTimer);
+    this.warmQueue = [];
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('pointermove', this.onPointer);
     document.removeEventListener('visibilitychange', this.onVisibility);
@@ -584,20 +589,45 @@ export class SpaceEngine {
 
   /** Load planet photos (CC BY 4.0, Solar System Scope): 4K on laptops, 2K on phones. */
   private loadTextures() {
-    const loader = new TextureLoader();
     const size = this.isMobile ? '2k' : '4k';
     const base = '/assets/planets/';
     const aniso = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+
+    // Decode images off the main thread where the browser can (Safari before 17 gets
+    // flipped bitmaps wrong, so it keeps the regular loader).
+    const ua = navigator.userAgent;
+    const oldSafari = /Version\/(\d+).*Safari/.test(ua) && Number(ua.match(/Version\/(\d+)/)?.[1]) < 17;
+    const bitmaps =
+      typeof createImageBitmap === 'function' && !oldSafari
+        ? new ImageBitmapLoader().setOptions({ imageOrientation: 'flipY', premultiplyAlpha: 'none' })
+        : null;
+    const images = bitmaps ? null : new TextureLoader();
+    const fetchTexture = (url: string, done: (tex: Texture) => void, fail: () => void) => {
+      if (bitmaps) {
+        bitmaps.load(
+          url,
+          (bitmap) => {
+            const tex = new Texture(bitmap);
+            tex.flipY = false;
+            tex.needsUpdate = true;
+            done(tex);
+          },
+          undefined,
+          fail,
+        );
+      } else images!.load(url, done, undefined, fail);
+    };
+
     const load = (file: string, onReady: (tex: Texture) => void, repeat = false) =>
-      loader.load(
+      fetchTexture(
         base + file,
         (tex) => {
           tex.anisotropy = aniso;
           if (repeat) tex.wrapS = RepeatWrapping;
           this.textures.push(tex);
           onReady(tex);
+          this.warmUp(tex);
         },
-        undefined,
         () => undefined, // keep the procedural look if a file fails
       );
 
@@ -656,6 +686,32 @@ export class SpaceEngine {
       this.skyMat.uniforms.uMap.value = tex;
       this.sky.visible = true;
     });
+  }
+
+  /**
+   * Send each texture to the GPU as soon as it arrives, one per frame, and compile the
+   * planet shaders ahead of time. Otherwise all of it happens on the first frame the
+   * planets come into view, which freezes the scroll for half a second.
+   */
+  private warmQueue: Texture[] = [];
+  private warmTimer = 0;
+  private warmUp(tex: Texture) {
+    this.warmQueue.push(tex);
+    if (this.warmTimer) return;
+    const step = () => {
+      const next = this.warmQueue.shift();
+      if (next) {
+        this.renderer.initTexture(next);
+        this.warmTimer = window.setTimeout(step, 50);
+        return;
+      }
+      this.warmTimer = 0;
+      const hidden = this.planets.filter((p) => !p.group.visible);
+      hidden.forEach((p) => (p.group.visible = true));
+      this.renderer.compile(this.scene, this.camera);
+      hidden.forEach((p) => (p.group.visible = false));
+    };
+    this.warmTimer = window.setTimeout(step, 50);
   }
 
   /* ---------------- Layout ---------------- */
@@ -870,14 +926,23 @@ export class SpaceEngine {
       const local = t - CH.worlds;
       const i = Math.min(2, Math.floor(local / CH.worldDur));
       const travel = clamp01((local - i * CH.worldDur) / 2);
-      const u = smooth(travel);
-      const from = i === 0 ? { pos: new Vector3(0, 0.6, driftEndZ), look: new Vector3(0, 0, driftEndZ - 120) } : worldCams[i - 1];
+      // Out of the logos the camera is already gliding forward (1 unit/s over the ~5 units
+      // to Earth), so the first move keeps that speed instead of stopping and restarting.
+      const u = i === 0 ? hermite(travel, 0.4) : smooth(travel);
+      const from =
+        i === 0
+          ? { pos: new Vector3(Math.sin(time * 0.25) * 0.6, 0.6, driftEndZ), look: new Vector3(0, 0, driftEndZ - 120) }
+          : worldCams[i - 1];
       const to = worldCams[i];
       f.pos.copy(from.pos).lerp(to.pos, u);
       f.look.copy(from.look).lerp(to.look, u);
-      f.pos.x += Math.sin(time * 0.3) * 0.25;
-      f.pos.y += Math.cos(time * 0.23) * 0.2;
-      f.stage = [2.25, 2.5, 2.75][i];
+      // The logo drift fades into the worlds sway rather than snapping
+      const swayIn = i === 0 ? u : 1;
+      f.pos.x += Math.sin(time * 0.3) * 0.25 * swayIn;
+      f.pos.y += Math.cos(time * 0.23) * 0.2 * swayIn;
+      // The nebula follows the stage, so it must change gradually, not jump at the cut
+      const stages = [1, 2.25, 2.5, 2.75];
+      f.stage = lerp(stages[i], stages[i + 1], u);
       f.appear = i === 0 ? smooth(clamp01(local / 1.2)) : 1;
       f.warp = Math.sin(travel * Math.PI) * (i === 0 ? 0.5 : 0.3);
       f.stretch = f.warp * 22;

@@ -81,13 +81,21 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
 
   useEffect(() => onEngine((engine) => (engineRef.current = engine)), []);
 
-  // Load every photo while the locked screen is up, so the fast montage cuts never show a blank frame.
+  // While the locked screen is up: set up the sound engine and load and decode every photo,
+  // so neither the launch press nor the fast montage cuts ever stall.
   useEffect(() => {
-    PHOTOS.forEach((src) => {
+    const audioTimer = window.setTimeout(() => audioRef.current.prepare(), 600);
+    const kept = PHOTOS.map((src) => {
       const img = new Image();
       img.decoding = 'async';
       img.src = src;
+      img.decode().catch(() => undefined);
+      return img;
     });
+    return () => {
+      window.clearTimeout(audioTimer);
+      kept.length = 0;
+    };
   }, []);
 
   // Lock the page while the show runs.

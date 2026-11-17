@@ -16,10 +16,17 @@ export class LaunchAudio {
 
   /** Must be called from a user gesture (the launch click) so the browser allows sound. */
   init() {
-    if (this.ctx) {
-      void this.ctx.resume();
-      return;
-    }
+    this.prepare();
+    void this.ctx?.resume();
+  }
+
+  /**
+   * Build the audio graph ahead of time. Creating an AudioContext can block for
+   * half a second on Windows, so this runs while the locked screen is up instead
+   * of on the launch press. Before a user gesture the context just waits suspended.
+   */
+  prepare() {
+    if (this.ctx) return;
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!Ctx) return;
     this.ctx = new Ctx();
