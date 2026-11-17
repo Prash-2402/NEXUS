@@ -71,7 +71,7 @@ export const siteConfig: SiteConfig = {
       song: 'https://docs.google.com/forms/d/e/1FAIpQLSet2AWF5v4Q0yuY6uZIVgfbY2_0vdkjnydB6sz-PpImFfGnqA/viewform',
       'talent-show': 'https://docs.google.com/forms/d/e/1FAIpQLSeax1p9TLbqqrwmQgzfocbLwBfUsCWaE9mIhnaFnSYiNMm4bQ/viewform',
       dance: 'https://docs.google.com/forms/d/e/1FAIpQLScbSJT-i-AU6A2Oh7nq95aCbBBWc_eblaCnfDrC0Az7NwtkTw/viewform',
-      'tableau-workshop': '',
+      'tableau-workshop': 'https://docs.google.com/forms/d/e/1FAIpQLSdiK6ayhgJFFH5Nb1F5M6HRW-vPXUuLc8fRI1hbs7_wwxe-Vg/viewform',
       'ai-workshop': 'https://docs.google.com/forms/d/e/1FAIpQLScKHVaUhfcBMx2xaUOnn2HdcQlHPA1lHZnPnCpCYULaYhmBVA/viewform',
       'nexus-olympics': 'https://docs.google.com/forms/d/e/1FAIpQLSdLITNC1UG5-b-77-cuxTodvyIiL47KmDVHcECLgRJp6ZiqGA/viewform',
     },
