@@ -334,13 +334,16 @@ function LogoCard({
   logoClass,
   eyebrow,
   name,
+  sub,
 }: {
   t: number;
   w: Window;
   logo: string;
   logoClass: string;
   eyebrow: string;
-  name: string;
+  name: React.ReactNode;
+  /** smaller second line under the name */
+  sub?: string;
 }) {
   const p = progress(t, w, 0, 0.25);
   if (!p) return null;
@@ -387,6 +390,11 @@ function LogoCard({
         >
           {name}
         </h2>
+        {sub && (
+          <p className="mt-2 font-display text-xl text-fg-muted sm:text-2xl lg:text-3xl" style={rise(t, w, 0.35, 0.3, 14)}>
+            {sub}
+          </p>
+        )}
       </div>
     </>
   );
@@ -562,14 +570,19 @@ export function Cinematic({ t }: { t: number }) {
       <Blackout t={t} />
       <Drop t={t} />
 
-      <LogoCard t={t} w={INSTITUTION_CARDS.christ} logo={siteConfig.branding.christLogo} logoClass="h-20 sm:h-28" eyebrow="Hosted at" name={siteConfig.institution} />
+      <LogoCard t={t} w={INSTITUTION_CARDS.christ} logo={siteConfig.branding.christLogo} logoClass="h-20 sm:h-28" eyebrow="Hosted at" name="CHRIST" sub="(Deemed to be University)" />
       <LogoCard
         t={t}
         w={INSTITUTION_CARDS.department}
         logo={siteConfig.branding.deptLogo}
         logoClass="h-32 w-32 sm:h-40 sm:w-40"
         eyebrow="Organised by"
-        name={siteConfig.departmentName}
+        name={
+          <>
+            <span className="block sm:whitespace-nowrap">Department of AI and</span>
+            <span className="block sm:whitespace-nowrap">Data Science Engineering</span>
+          </>
+        }
       />
       <LogoCard
         t={t}

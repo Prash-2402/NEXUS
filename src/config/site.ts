@@ -45,7 +45,7 @@ export const siteConfig: SiteConfig = {
   eventIdentity: 'An AI Utsav',
   tagline: 'Where Worlds Converge',
   conceptIdea: 'Different worlds. One universe.',
-  departmentName: 'Department of AI & Data Science Engineering',
+  departmentName: 'Department of AI and Data Science Engineering',
   organizingClub: 'CAADS',
   organizingClubFullName: 'Christites Association of AI and Data Science',
   institution: 'CHRIST (Deemed to be University)',

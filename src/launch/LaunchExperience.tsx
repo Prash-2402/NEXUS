@@ -85,7 +85,8 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
   // so neither the launch press nor the fast montage cuts ever stall.
   useEffect(() => {
     const audioTimer = window.setTimeout(() => audioRef.current.prepare(), 600);
-    const kept = PHOTOS.map((src) => {
+    const { christLogo, deptLogo, caadsLogo } = siteConfig.branding;
+    const kept = [...PHOTOS, christLogo, deptLogo, caadsLogo].map((src) => {
       const img = new Image();
       img.decoding = 'async';
       img.src = src;

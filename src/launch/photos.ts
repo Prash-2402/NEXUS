@@ -6,7 +6,12 @@
  * Group and action shots only, each checked for sharpness.
  * To swap a photo, replace the file (landscape, about 1600px wide, WebP or JPG).
  */
-export const PHOTOS: string[] = Array.from({ length: 25 }, (_, i) => `/launch/photos/${String(i + 1).padStart(2, '0')}.webp`);
+// 03 is a re-cropped JPG; every other photo is WebP.
+const JPG = new Set([3]);
+export const PHOTOS: string[] = Array.from({ length: 25 }, (_, i) => {
+  const n = i + 1;
+  return `/launch/photos/${String(n).padStart(2, '0')}.${JPG.has(n) ? 'jpg' : 'webp'}`;
+});
 
 /** How many frames the film cycles through when there are no photos. */
 export const PLACEHOLDER_COUNT = 12;
