@@ -12,6 +12,8 @@ export class LaunchAudio {
   private master: GainNode | null = null;
   /** Send into the room reverb. */
   private verb: GainNode | null = null;
+  /** All the drums go through here: louder than the rest, with a compressor for punch. */
+  private drums: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
   private saturator: WaveShaperNode | null = null;
   muted = false;
@@ -42,10 +44,10 @@ export class LaunchAudio {
     this.master.gain.value = this.muted ? 0 : 0.9;
     // Brick-wall limiter on the output so the big hits never clip or crackle.
     const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -6;
+    limiter.threshold.value = -8;
     limiter.knee.value = 0;
     limiter.ratio.value = 20;
-    limiter.attack.value = 0.002;
+    limiter.attack.value = 0.001;
     limiter.release.value = 0.15;
     this.master.connect(limiter).connect(ctx.destination);
 
@@ -56,6 +58,16 @@ export class LaunchAudio {
     wet.gain.value = 0.35;
     this.verb = ctx.createGain();
     this.verb.connect(room).connect(wet).connect(this.master);
+
+    const glue = ctx.createDynamicsCompressor();
+    glue.threshold.value = -18;
+    glue.ratio.value = 3;
+    glue.attack.value = 0.006;
+    glue.release.value = 0.12;
+    const drumLevel = ctx.createGain();
+    drumLevel.gain.value = 1.5;
+    this.drums = ctx.createGain();
+    this.drums.connect(glue).connect(drumLevel).connect(this.master);
 
     const len = ctx.sampleRate * 2;
     this.noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -108,6 +120,8 @@ export class LaunchAudio {
         return this.chenda(at, level);
       case 'dhol':
         return this.dhol(at, level);
+      case 'kick':
+        return this.kick(at, level);
       case 'thalam':
         return this.thalam(at, level, ev.open ?? false);
       case 'stab':
@@ -128,8 +142,8 @@ export class LaunchAudio {
   /* ---------------- Routing helpers ---------------- */
 
   /** Send a voice to the mix, with some of it into the room. */
-  private out(node: AudioNode, send: number) {
-    node.connect(this.master!);
+  private out(node: AudioNode, send: number, bus: AudioNode = this.master!) {
+    node.connect(bus);
     if (send > 0) {
       const s = this.ctx!.createGain();
       s.gain.value = send;
@@ -175,7 +189,7 @@ export class LaunchAudio {
     const g = this.hitEnv(at, peak, decay);
     o.connect(g);
     if (drive) g.connect(this.drive());
-    else this.out(g, send);
+    else this.out(g, send, this.drums!);
     o.start(at);
     o.stop(at + decay + 0.05);
   }
@@ -188,7 +202,7 @@ export class LaunchAudio {
     const lp = this.filter('lowpass', lowpass, 0.5);
     const g = this.hitEnv(at, peak, decay);
     n.connect(f).connect(lp).connect(g);
-    this.out(g, send);
+    this.out(g, send, this.drums!);
   }
 
   /** Soft clipper that adds harmonics, so the deep hits are still heard on small speakers. */
@@ -238,6 +252,16 @@ export class LaunchAudio {
     this.burst(at, 'lowpass', 900, 0.7, 0.2 * level, 0.04, 0.1);
   }
 
+  /**
+   * Bass drum: a deep, punchy kick. A fast pitch drop for the punch, a driven
+   * sub layer so the low end is felt even on projector speakers, and a click on top.
+   */
+  private kick(at: number, level: number) {
+    this.body(at, 170, 46, 0.09, 0.62 * level, 0.5, 0.05);
+    this.body(at, 90, 42, 0.12, 0.22 * level, 0.45, 0, true);
+    this.burst(at, 'highpass', 2500, 0.7, 0.12 * level, 0.012, 0, 8000);
+  }
+
   /** Ilathalam: the small hand cymbals, a closed "chak" or an open "ching". */
   private thalam(at: number, level: number, open: boolean) {
     const ctx = this.ctx!;
@@ -246,9 +270,9 @@ export class LaunchAudio {
       const o = ctx.createOscillator();
       o.type = 'sine';
       o.frequency.value = hz;
-      const g = this.hitEnv(at, (0.035 - i * 0.008) * level, decay * (1 - i * 0.2));
+      const g = this.hitEnv(at, (0.03 - i * 0.007) * level, decay * (1 - i * 0.2));
       o.connect(g);
-      this.out(g, 0.35);
+      this.out(g, 0.35, this.drums!);
       o.start(at);
       o.stop(at + decay + 0.05);
     });
@@ -295,11 +319,11 @@ export class LaunchAudio {
     const ctx = this.ctx!;
     const lp = this.filter('lowpass', 300, 1.2);
     lp.frequency.setValueAtTime(300, at);
-    lp.frequency.exponentialRampToValueAtTime(2400, at + 0.04);
-    lp.frequency.exponentialRampToValueAtTime(500, at + dur);
+    lp.frequency.exponentialRampToValueAtTime(1400, at + 0.04);
+    lp.frequency.exponentialRampToValueAtTime(400, at + dur);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(0.08 * level, at + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.03 * level, at + 0.015);
     g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
     lp.connect(g);
     this.out(g, 0.35);
@@ -325,8 +349,8 @@ export class LaunchAudio {
     lp.frequency.exponentialRampToValueAtTime(380, at + dur);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(0.09 * level, at + 0.04);
-    g.gain.setValueAtTime(0.09 * level, at + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.05 * level, at + 0.04);
+    g.gain.setValueAtTime(0.05 * level, at + 0.4);
     g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
     lp.connect(g);
     g.connect(this.drive());

@@ -18,6 +18,7 @@ export type BeatKind =
   | 'thavil'
   | 'chenda'
   | 'dhol'
+  | 'kick'
   | 'thalam'
   | 'stab'
   | 'taiko'
@@ -73,8 +74,12 @@ function groove(from: number, to: number, energy: number, level = 1) {
     const bar = Math.floor(i / 16);
     const v = (x: number) => x * level * feel();
 
+    // bass drum: on 1 and 3, plus the kuthu push (3+3+2) once the groove is up
+    if (s === 0 || s === 8) add({ at, kind: 'kick', level: v(1) });
+    else if (energy >= 2 && (s === 6 || s === 14)) add({ at, kind: 'kick', level: v(0.8) });
+    else if (energy >= 4 && s === 11) add({ at, kind: 'kick', level: v(0.6) });
     // dhol on beats 1 and 3
-    if (s === 0 || s === 8) add({ at, kind: 'dhol', level: v(1) });
+    if (s === 0 || s === 8) add({ at, kind: 'dhol', level: v(0.9) });
     // ilathalam: open ching on the beat, closed chak on the off-beat
     if (s % 4 === 0) add({ at, kind: 'thalam', open: energy >= 2, level: v(0.8) });
     else if (s % 4 === 2 && energy >= 2) add({ at, kind: 'thalam', level: v(0.55) });
@@ -110,6 +115,7 @@ function roll(from: number, to: number, levelFrom = 0.4, levelTo = 1.2) {
     const p = (t - from) / (to - from);
     add({ at: t, kind: 'chenda', level: levelFrom + (levelTo - levelFrom) * p });
     if (i % 4 === 0) add({ at: t, kind: 'dhol', level: 0.5 + p * 0.6 });
+    if (i % 4 === 0) add({ at: t, kind: 'kick', level: 0.5 + p * 0.6 });
     t += p < 0.35 ? STEP : p < 0.75 ? STEP / 2 : STEP / 4;
     i++;
   }
@@ -123,6 +129,7 @@ function bigHit(at: number, root = 55) {
   add({ at, kind: 'boom', level: 1 });
   add({ at, kind: 'taiko', level: 1.3 });
   add({ at, kind: 'dhol', level: 1.2 });
+  add({ at, kind: 'kick', level: 1.3 });
   add({ at, kind: 'stab', hz: root * 2, level: 1, dur: 0.8 });
   add({ at, kind: 'thalam', open: true, level: 1.2 });
 }
@@ -130,6 +137,7 @@ function bigHit(at: number, root = 55) {
 /** Logos and lines: big drum, sub, a stab and a ching. */
 function hit(at: number) {
   add({ at, kind: 'taiko', level: 1.1 });
+  add({ at, kind: 'kick', level: 1.2 });
   add({ at, kind: 'boom', level: 0.6 });
   add({ at, kind: 'stab', hz: A2, level: 0.9, dur: 0.6 });
   add({ at, kind: 'thalam', open: true, level: 1 });
@@ -178,6 +186,7 @@ DROP_WORDS.slice(1).forEach((w) => {
 // keep the pulse going under the words, then the full groove
 for (let t = CH.drop + 0.5; t < CH.drop + 2 - 1e-6; t += BEAT / 2) {
   add({ at: t, kind: 'dhol', level: 0.7 });
+  add({ at: t, kind: 'kick', level: 0.9 });
   add({ at: t, kind: 'thalam', open: true, level: 0.6 });
 }
 roll(CH.drop + 1.5, CH.drop + 2, 0.6, 1);
@@ -213,7 +222,11 @@ groove(CH.dates, CH.logo, 4, 1.1);
 
 // The logo assembles (76-79): one long chenda roll, the big drum on every beat, into the final hit
 roll(CH.logo, CH.hit, 0.4, 1.5);
-for (let t = CH.logo; t < CH.hit - 1e-6; t += BEAT) add({ at: t, kind: 'dhol', level: 0.6 + ((t - CH.logo) / (CH.hit - CH.logo)) * 0.7 });
+for (let t = CH.logo; t < CH.hit - 1e-6; t += BEAT) {
+  const p = (t - CH.logo) / (CH.hit - CH.logo);
+  add({ at: t, kind: 'dhol', level: 0.6 + p * 0.7 });
+  add({ at: t, kind: 'kick', level: 0.7 + p * 0.6 });
+}
 lift(CH.hit, CH.hit - CH.logo, 1.3);
 
 // The final hit (79): A major, the groove under the tagline, then three closing hits
@@ -222,6 +235,7 @@ add({ at: CH.hit, kind: 'drone', notes: [A2, 220, 277.18, 329.63], dur: 5, level
 groove(CH.hit + 0.5, CH.handoff - 1.5, 4, 0.95);
 [CH.handoff - 1.5, CH.handoff - 1, CH.handoff - 0.5].forEach((at, i) => {
   add({ at, kind: 'taiko', level: 1 + i * 0.15 });
+  add({ at, kind: 'kick', level: 1.2 });
   add({ at, kind: 'stab', hz: A2, level: 1, dur: i === 2 ? 1.2 : 0.35 });
   add({ at, kind: 'thalam', open: true, level: 1 });
 });

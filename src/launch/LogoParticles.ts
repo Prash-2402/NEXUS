@@ -41,6 +41,7 @@ export class LogoParticles {
   private assembleStart: number | null = null;
   private burstAt: number | null = null;
   private centre = { x: 0, y: 0 };
+  private image: HTMLImageElement | null = null;
   /** The on-screen box the logo assembles into (CSS pixels). */
   logoBox = { x: 0, y: 0, w: 0, h: 0 };
 
@@ -57,6 +58,8 @@ export class LogoParticles {
     this.canvas.style.width = `${this.width}px`;
     this.canvas.style.height = `${this.height}px`;
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    // Re-centre the logo for the new screen size (for example after going fullscreen).
+    if (this.image) this.layout(this.image);
   }
 
   /** Sample the logo image into particle targets. Resolves once particles are ready. */
@@ -64,7 +67,13 @@ export class LogoParticles {
     const img = new Image();
     img.src = src;
     await img.decode();
+    this.image = img;
+    this.layout(img);
+    this.ready = true;
+  }
 
+  /** Work out where the logo sits on this screen and sample it into particle targets. */
+  private layout(img: HTMLImageElement) {
     // Same size as the hero logo, so the handoff lines up.
     const w = Math.min(this.width * 0.9, 780);
     const h = w * (img.naturalHeight / img.naturalWidth);
@@ -112,7 +121,6 @@ export class LogoParticles {
       }
     }
     this.particles = particles;
-    this.ready = true;
   }
 
   /** Begin assembling at the given time (seconds, same clock as `draw`). */

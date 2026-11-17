@@ -116,7 +116,11 @@ export function LaunchExperience({ onReveal, onFinished }: LaunchExperienceProps
     const particles = new LogoParticles(canvas, isMobile);
     particlesRef.current = particles;
     particles.load(siteConfig.branding.nexusLogo).then(() => setLogoBox({ ...particles.logoBox }));
-    const onResize = () => particles.resize();
+    // keep the crisp logo image on top of the particle logo when the screen size changes
+    const onResize = () => {
+      particles.resize();
+      if (particles.logoBox.w) setLogoBox({ ...particles.logoBox });
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
