@@ -157,7 +157,7 @@ export const eventsData: NexusEvent[] = [
     format: 'Hands-on workshop · Full day',
     eligibility: 'Open to all students, beginners welcome. Bring your own laptop with stable internet.',
     sessions: [{ date: '2026-12-01', time: '9:00 AM – 5:00 PM' }],
-    venue: 'Amoga Hall',
+    venue: 'Amogha Hall, Block 3',
     poc: 'Harshdeep',
     registrationEnabled: true,
     registrationUrl: form('ai-workshop'),
