@@ -74,6 +74,8 @@ export class LogoParticles {
 
   /** Work out where the logo sits on this screen and sample it into particle targets. */
   private layout(img: HTMLImageElement) {
+    // A hidden or minimised window has no size yet; lay out on the next resize instead.
+    if (this.width < 2 || this.height < 2 || !img.naturalWidth) return;
     // Same size as the hero logo, so the handoff lines up.
     const w = Math.min(this.width * 0.9, 780);
     const h = w * (img.naturalHeight / img.naturalWidth);

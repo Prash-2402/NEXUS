@@ -243,7 +243,7 @@ export const eventsData: NexusEvent[] = [
       'NEXUS Melodiya is a solo singing competition open to every genre. Each singer gets up to 4 minutes on stage plus 1 minute to set up. 30 slots, first come, first served.',
     format: 'Solo · 4 minutes + 1 minute setup',
     eligibility: 'Solo singers only. Maximum of 30 participants.',
-    sessions: [{ date: '2026-11-23', time: '9:00 AM – 1:00 PM' }],
+    sessions: [{ date: '2026-12-02', time: '9:00 AM – 1:00 PM' }],
     venue: 'Block 3 Auditorium',
     poc: 'Joel J George & Joel DSilva',
     prize: '₹5,000',
