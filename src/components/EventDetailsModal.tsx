@@ -63,7 +63,7 @@ export function EventDetailsModal({ event, onClose, onRegister }: EventDetailsMo
     ['Venue', shown.venue],
     ['Format', shown.format],
     ['Eligibility', shown.eligibility],
-    ...(shown.prize ? ([['Prize pool', shown.prize]] as Array<[string, React.ReactNode]>) : []),
+    ...(shown.prize ? ([['Prize pool', shown.prizeDetail ? `${shown.prize} ${shown.prizeDetail}` : shown.prize]] as Array<[string, React.ReactNode]>) : []),
     ...(shown.poc ? ([['Coordinators', shown.poc]] as Array<[string, React.ReactNode]>) : []),
   ];
 

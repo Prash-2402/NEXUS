@@ -31,6 +31,8 @@ export interface NexusEvent {
   note?: string;
   /** Total prize pool, from the registration form */
   prize?: string;
+  /** Shown after the prize pool, e.g. "each for FIFA and eFootball" */
+  prizeDetail?: string;
   registrationEnabled: boolean;
   registrationUrl: string;
 }
@@ -63,7 +65,7 @@ export const worlds: Record<WorldId, WorldInfo> = {
     worldName: 'World of Strategy',
     line: 'Think fast, play smart.',
     description:
-      'Tech Olympics, Family Feud, Copa del Nexus and Shark Tank. Quick wit, teamwork and nerve under pressure.',
+      'NEXUS Olympics, Family Feud, Copa del Nexus and Shark Tank. Quick wit, teamwork and nerve under pressure.',
     color: '#A78BFA',
   },
   cultural: {
@@ -166,7 +168,7 @@ export const eventsData: NexusEvent[] = [
   // Non-technical
   {
     id: 'nexus-olympics',
-    name: 'Tech Olympics',
+    name: 'NEXUS Olympics',
     world: 'non-technical',
     summary: 'Two action-packed days. Movie and music knowledge on day one, logic and AI-powered creativity on day two.',
     description:
@@ -203,15 +205,16 @@ export const eventsData: NexusEvent[] = [
     id: 'esports',
     name: 'Copa del Nexus',
     world: 'non-technical',
-    summary: 'One game. One champion. Knockout football in EA SPORTS FC 26 on PC or eFootball on mobile.',
+    summary: 'One game. One champion. Knockout football in FIFA on laptop or eFootball on phone.',
     description:
-      'An individual knockout tournament with 10-minute matches. Register for either EA SPORTS FC 26 (PC) or eFootball (Mobile) and battle your way to the title.',
+      'An individual knockout tournament with 10-minute matches. Register for FIFA on laptop or eFootball on phone, and battle your way to the title. Each game has its own ₹2,500 prize pool.',
     format: 'Individual · Knockout · 10-minute matches',
-    eligibility: 'Individual entry. Choose EA SPORTS FC 26 (PC) or eFootball (Mobile).',
+    eligibility: 'Individual entry. Choose FIFA (laptop) or eFootball (phone).',
     sessions: [{ date: '2026-12-03', time: '9:00 AM – 4:00 PM' }],
     venue: 'Block 2, 4th Floor Seminar Hall',
     poc: 'Merwin & Prajwal VL',
-    prize: '₹5,000',
+    prize: '₹2,500',
+    prizeDetail: 'each for FIFA and eFootball',
     registrationEnabled: true,
     registrationUrl: form('esports'),
   },

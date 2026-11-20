@@ -70,7 +70,9 @@ export function EventCard({ event, index, onOpenDetails, onRegister }: EventCard
           <div className="flex items-start gap-1.5">
             <dt className="sr-only">Prize pool</dt>
             <Trophy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold/80" />
-            <dd className="text-fg">{event.prize} prize pool</dd>
+            <dd className="text-fg">
+              {event.prize} prize pool{event.prizeDetail && ` ${event.prizeDetail}`}
+            </dd>
           </div>
         )}
       </dl>
