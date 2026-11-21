@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowUpRight, X } from 'lucide-react';
 import { worlds, type NexusEvent } from '../data/events';
+import type { LiveStatus } from '../lib/timing';
 
 interface EventDetailsModalProps {
   event: NexusEvent | null;
+  status: LiveStatus;
   onClose: () => void;
   onRegister: (event: NexusEvent) => void;
 }
 
 const longDate = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 
-export function EventDetailsModal({ event, onClose, onRegister }: EventDetailsModalProps) {
+export function EventDetailsModal({ event, status, onClose, onRegister }: EventDetailsModalProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [shown, setShown] = useState<NexusEvent | null>(null);
   const [visible, setVisible] = useState(false);
@@ -127,15 +129,21 @@ export function EventDetailsModal({ event, onClose, onRegister }: EventDetailsMo
           )}
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button onClick={() => onRegister(shown)} className="btn-primary flex-1">
-              Register for {shown.name}
-              <ArrowUpRight className="h-4 w-4" />
-            </button>
+            {status === 'done' ? (
+              <p className="flex flex-1 items-center justify-center rounded-full border border-white/10 px-6 py-3 text-sm text-fg-muted">
+                {shown.name} has ended. Thanks to everyone who took part!
+              </p>
+            ) : (
+              <button onClick={() => onRegister(shown)} className="btn-primary flex-1">
+                Register for {shown.name}
+                <ArrowUpRight className="h-4 w-4" />
+              </button>
+            )}
             <button onClick={onClose} className="btn-ghost sm:w-auto">
               Close
             </button>
           </div>
-          <p className="mt-4 text-center text-xs text-fg-faint sm:text-left">Registration opens in a new tab.</p>
+          {status !== 'done' && <p className="mt-4 text-center text-xs text-fg-faint sm:text-left">Registration opens in a new tab.</p>}
         </div>
       </div>
     </div>,

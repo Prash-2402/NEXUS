@@ -3,6 +3,7 @@ import { ArrowDown, ArrowRight } from 'lucide-react';
 import { siteConfig } from '../config/site';
 import { useCountdown } from '../hooks/useCountdown';
 import { gsap, useGsap } from '../lib/motion';
+import { LiveToday } from './LiveToday';
 
 interface HeroProps {
   onRegisterClick: () => void;
@@ -92,7 +93,7 @@ export function Hero({ onRegisterClick, onExploreClick }: HeroProps) {
           </button>
         </div>
 
-        <div data-hero="fade" className="mt-12 sm:mt-14" aria-live="off">
+        <div data-hero="fade" className="mt-12 flex w-full justify-center sm:mt-14" aria-live="off">
           {countdown.status === 'upcoming' ? (
             <dl className="flex items-stretch divide-x divide-white/10" aria-label="Countdown to NEXUS">
               {units.map((u) => (
@@ -102,8 +103,10 @@ export function Hero({ onRegisterClick, onExploreClick }: HeroProps) {
                 </div>
               ))}
             </dl>
+          ) : countdown.status === 'in-progress' ? (
+            <LiveToday />
           ) : (
-            <p className="font-mono text-xs uppercase tracking-label text-gold">{countdown.formattedString}</p>
+            <p className="font-mono text-xs uppercase tracking-label text-gold">NEXUS 2026 has concluded. Thank you for being part of it!</p>
           )}
         </div>
       </div>

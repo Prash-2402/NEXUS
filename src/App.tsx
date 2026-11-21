@@ -15,6 +15,7 @@ import { RegistrationCTA } from './components/RegistrationCTA';
 import { Footer } from './components/Footer';
 import { Toast } from './components/ui/Toast';
 import { isLaunchUrl } from './launch/isLaunchUrl';
+import { eventStatus } from './lib/timing';
 
 const LaunchExperience = lazy(() => import('./launch/LaunchExperience').then((m) => ({ default: m.LaunchExperience })));
 const launchMode = isLaunchUrl();
@@ -38,6 +39,10 @@ export function App() {
       if (!event) {
         scrollToId('events');
         showToast('Pick an event below to open its registration form.');
+        return;
+      }
+      if (eventStatus(event, Date.now()) === 'done') {
+        showToast(`${event.name} has already taken place.`);
         return;
       }
       if (siteConfig.registration.status === 'closed' || !event.registrationEnabled) {

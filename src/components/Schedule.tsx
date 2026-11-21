@@ -1,10 +1,11 @@
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { siteConfig } from '../config/site';
 import { worldOrder, worlds, type NexusEvent } from '../data/events';
 import { scheduleDays, type ScheduleItem } from '../data/schedule';
 import { gsap, ScrollTrigger, useGsap } from '../lib/motion';
 import { cn } from '../lib/utils';
+import { statusOf, todayIst, useNow } from '../lib/timing';
 import { SectionHeader } from './ui/SectionHeader';
 
 interface ScheduleProps {
@@ -13,13 +14,10 @@ interface ScheduleProps {
 
 const colorFor = (item: ScheduleItem) => (item.world === 'ceremony' ? '#eef1f8' : worlds[item.world].color);
 
-function todayIso() {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: siteConfig.dates.timezone }).format(new Date());
-}
-
 export function Schedule({ onRegister }: ScheduleProps) {
   const ref = useRef<HTMLElement>(null);
-  const today = useMemo(todayIso, []);
+  const now = useNow();
+  const today = todayIst(now);
 
   useGsap(ref, () => {
     gsap.fromTo(
@@ -113,17 +111,32 @@ export function Schedule({ onRegister }: ScheduleProps) {
                   </p>
 
                     <div className="mt-3 space-y-3">
-                      {day.items.map((item) => (
+                      {day.items.map((item) => {
+                        const status = statusOf(day.date, item.time, now);
+                        return (
                         <div
                           key={item.key}
                           data-day-reveal
-                          className="relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/[0.07] bg-ink-900/85 p-5 backdrop-blur-md transition-colors hover:border-white/15 sm:flex-row sm:items-center sm:justify-between"
+                          className={cn(
+                            'relative flex flex-col gap-4 overflow-hidden rounded-2xl border bg-ink-900/85 p-5 backdrop-blur-md transition-[border-color,opacity] hover:border-white/15 sm:flex-row sm:items-center sm:justify-between',
+                            status === 'live' ? 'border-gold/40' : 'border-white/[0.07]',
+                            status === 'done' && 'opacity-55 hover:opacity-100',
+                          )}
                         >
                           <span className="absolute inset-y-0 left-0 w-[2px]" style={{ background: colorFor(item) }} />
                           <div className="min-w-0">
                             <h3 className="font-display text-lg font-semibold text-fg">
                               {item.name}
                               {item.label && <span className="ml-2 font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-fg-faint">{item.label}</span>}
+                              {status === 'live' && (
+                                <span className="ml-2 inline-flex translate-y-[-2px] items-center gap-1.5 rounded-full bg-gold/15 px-2 py-0.5 font-mono text-[10px] font-normal uppercase tracking-[0.14em] text-gold">
+                                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold" />
+                                  Live now
+                                </span>
+                              )}
+                              {status === 'done' && (
+                                <span className="ml-2 font-mono text-[10px] font-normal uppercase tracking-[0.14em] text-fg-faint">Done</span>
+                              )}
                             </h3>
                             <p className="mt-1 text-[13px] text-fg-muted">
                               <span className="block whitespace-nowrap sm:inline">{item.time}</span>
@@ -131,7 +144,7 @@ export function Schedule({ onRegister }: ScheduleProps) {
                               <span className="block sm:inline">{item.venue}</span>
                             </p>
                           </div>
-                          {item.event?.registrationEnabled && (
+                          {item.event?.registrationEnabled && status !== 'done' && (
                             <button
                               onClick={() => item.event && onRegister(item.event)}
                               className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-white/15 px-4 py-2 text-[13px] text-fg transition-colors hover:border-white/40 hover:bg-white/[0.04] sm:self-auto"
@@ -142,7 +155,8 @@ export function Schedule({ onRegister }: ScheduleProps) {
                             </button>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                 </div>
               </li>

@@ -1,15 +1,17 @@
 import type { PointerEvent } from 'react';
 import { ArrowUpRight, Clock, MapPin, Trophy } from 'lucide-react';
 import { formatEventDates, formatEventTime, worlds, type NexusEvent } from '../data/events';
+import type { LiveStatus } from '../lib/timing';
 
 interface EventCardProps {
   event: NexusEvent;
+  status: LiveStatus;
   index: number;
   onOpenDetails: (event: NexusEvent) => void;
   onRegister: (event: NexusEvent) => void;
 }
 
-export function EventCard({ event, index, onOpenDetails, onRegister }: EventCardProps) {
+export function EventCard({ event, status, index, onOpenDetails, onRegister }: EventCardProps) {
   const world = worlds[event.world];
 
   // Soft spotlight that follows the cursor.
@@ -23,7 +25,9 @@ export function EventCard({ event, index, onOpenDetails, onRegister }: EventCard
     <article
       data-event-card
       onPointerMove={onMove}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-ink-900/80 p-6 backdrop-blur-md transition-[border-color,transform] duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-7"
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-ink-900/80 p-6 backdrop-blur-md transition-[border-color,transform,opacity] duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-7 ${
+        status === 'live' ? 'border-white/25' : 'border-white/[0.08]'
+      } ${status === 'done' ? 'opacity-60 hover:opacity-100' : ''}`}
       style={{ ['--accent' as string]: world.color }}
     >
       <div
@@ -39,7 +43,19 @@ export function EventCard({ event, index, onOpenDetails, onRegister }: EventCard
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: world.color }} />
           {world.title}
         </span>
-        <span className="text-fg-faint">{String(index + 1).padStart(2, '0')}</span>
+        {status === 'live' ? (
+          <span className="flex items-center gap-1.5 rounded-full bg-gold/15 px-2 py-0.5 text-gold">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-gold" />
+            </span>
+            Happening now
+          </span>
+        ) : status === 'done' ? (
+          <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-fg-faint">Completed</span>
+        ) : (
+          <span className="text-fg-faint">{String(index + 1).padStart(2, '0')}</span>
+        )}
       </div>
 
       <h3 className="relative mt-6 font-display text-2xl font-semibold tracking-tight text-fg">{event.name}</h3>
@@ -85,14 +101,20 @@ export function EventCard({ event, index, onOpenDetails, onRegister }: EventCard
         >
           Details
         </button>
-        <button
-          onClick={() => onRegister(event)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-fg px-4 py-2.5 text-[13px] font-medium text-ink-950 transition-all hover:bg-white hover:shadow-[0_0_30px_-6px_var(--accent)]"
-          aria-label={`Register for ${event.name}`}
-        >
-          Register
-          <ArrowUpRight className="h-3.5 w-3.5" />
-        </button>
+        {status === 'done' ? (
+          <span className="flex flex-1 items-center justify-center rounded-full border border-white/[0.06] px-4 py-2.5 text-[13px] text-fg-faint">
+            Event over
+          </span>
+        ) : (
+          <button
+            onClick={() => onRegister(event)}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-fg px-4 py-2.5 text-[13px] font-medium text-ink-950 transition-all hover:bg-white hover:shadow-[0_0_30px_-6px_var(--accent)]"
+            aria-label={`Register for ${event.name}`}
+          >
+            Register
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
     </article>
   );

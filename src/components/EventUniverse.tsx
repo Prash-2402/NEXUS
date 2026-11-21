@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { eventsData, worldOrder, worlds, type EventFilter, type NexusEvent } from '../data/events';
 import { focusWorld, gsap, prefersReducedMotion, ScrollTrigger } from '../lib/motion';
 import { cn } from '../lib/utils';
+import { eventStatus, useNow, type LiveStatus } from '../lib/timing';
 import { EventCard } from './EventCard';
 import { EventDetailsModal } from './EventDetailsModal';
 import { SectionHeader } from './ui/SectionHeader';
@@ -23,7 +24,12 @@ export function EventUniverse({ onRegisterEvent }: EventUniverseProps) {
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const firstRender = useRef(true);
 
-  const visible = filter === 'all' ? eventsData : eventsData.filter((e) => e.world === filter);
+  const now = useNow();
+  const rank: Record<LiveStatus, number> = { live: 0, upcoming: 1, done: 2 };
+  // What is on now comes first, finished events drop to the end.
+  const visible = (filter === 'all' ? eventsData : eventsData.filter((e) => e.world === filter))
+    .map((event, order) => ({ event, order, status: eventStatus(event, now) }))
+    .sort((a, b) => rank[a.status] - rank[b.status] || a.order - b.order);
   const count = (id: EventFilter) => (id === 'all' ? eventsData.length : eventsData.filter((e) => e.world === id).length);
 
   const choose = useCallback((id: EventFilter) => {
@@ -113,10 +119,11 @@ export function EventUniverse({ onRegisterEvent }: EventUniverseProps) {
         </div>
 
         <div ref={gridRef} className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" role="tabpanel">
-          {visible.map((event, i) => (
+          {visible.map(({ event, status }, i) => (
             <EventCard
               key={event.id}
               event={event}
+              status={status}
               index={i}
               onOpenDetails={setSelected}
               onRegister={onRegisterEvent}
@@ -127,6 +134,7 @@ export function EventUniverse({ onRegisterEvent }: EventUniverseProps) {
 
       <EventDetailsModal
         event={selected}
+        status={selected ? eventStatus(selected, now) : 'upcoming'}
         onClose={() => setSelected(null)}
         onRegister={(ev) => {
           setSelected(null);

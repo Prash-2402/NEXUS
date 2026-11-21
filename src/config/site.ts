@@ -79,7 +79,7 @@ export const siteConfig: SiteConfig = {
   socials: {
     instagramUrl: 'https://www.instagram.com/caads.adse/',
     instagramHandle: '@caads.adse',
-    websiteUrl: 'https://nexus.christuniversity.in',
+    websiteUrl: 'https://nexus-caads.vercel.app',
   },
   branding: {
     nexusLogo: '/assets/logos/nexus-logo.webp',
