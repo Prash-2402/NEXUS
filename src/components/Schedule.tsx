@@ -36,13 +36,18 @@ export function Schedule({ onRegister }: ScheduleProps) {
         onEnter: () => day.classList.add('is-past'),
         onLeaveBack: () => day.classList.remove('is-past'),
       });
-      gsap.from(day.querySelectorAll('[data-day-reveal]'), {
-        autoAlpha: 0,
-        x: 24,
-        duration: 0.9,
-        stagger: 0.06,
-        scrollTrigger: { trigger: day, start: 'top 85%', once: true },
-      });
+      // fromTo with explicit end values, so the cards always finish fully visible
+      gsap.fromTo(
+        day.querySelectorAll('[data-day-reveal]'),
+        { autoAlpha: 0, x: 24 },
+        {
+          autoAlpha: 1,
+          x: 0,
+          duration: 0.9,
+          stagger: 0.06,
+          scrollTrigger: { trigger: day, start: 'top 85%', once: true },
+        },
+      );
     });
   });
 
@@ -118,9 +123,10 @@ export function Schedule({ onRegister }: ScheduleProps) {
                           key={item.key}
                           data-day-reveal
                           className={cn(
-                            'relative flex flex-col gap-4 overflow-hidden rounded-2xl border bg-ink-900/85 p-5 backdrop-blur-md transition-[border-color,opacity] hover:border-white/15 sm:flex-row sm:items-center sm:justify-between',
+                            'relative flex flex-col gap-4 overflow-hidden rounded-2xl border bg-ink-900/85 p-5 backdrop-blur-md transition-[border-color,filter] hover:border-white/15 sm:flex-row sm:items-center sm:justify-between',
                             status === 'live' ? 'border-gold/40' : 'border-white/[0.07]',
-                            status === 'done' && 'opacity-55 hover:opacity-100',
+                            // dim with a filter, not opacity: GSAP owns the opacity for the reveal
+                            status === 'done' && '[filter:saturate(0.4)_brightness(0.6)] hover:[filter:none]',
                           )}
                         >
                           <span className="absolute inset-y-0 left-0 w-[2px]" style={{ background: colorFor(item) }} />

@@ -25,9 +25,9 @@ export function EventCard({ event, status, index, onOpenDetails, onRegister }: E
     <article
       data-event-card
       onPointerMove={onMove}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-ink-900/80 p-6 backdrop-blur-md transition-[border-color,transform,opacity] duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-7 ${
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-ink-900/80 p-6 backdrop-blur-md transition-[border-color,transform,filter] duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-7 ${
         status === 'live' ? 'border-white/25' : 'border-white/[0.08]'
-      } ${status === 'done' ? 'opacity-60 hover:opacity-100' : ''}`}
+      } ${status === 'done' ? '[filter:saturate(0.4)_brightness(0.65)] hover:[filter:none]' : ''}`}
       style={{ ['--accent' as string]: world.color }}
     >
       <div

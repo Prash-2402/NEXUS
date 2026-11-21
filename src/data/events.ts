@@ -158,7 +158,7 @@ export const eventsData: NexusEvent[] = [
       'An offline, instructor-led workshop by certified Salesforce trainer Harshdeep Sharma. Learn Salesforce CRM fundamentals, Data Cloud architecture, data ingestion, harmonization, customer data unification and segmentation, through guided exercises, a hands-on lab and a closing demo with Q&A.',
     format: 'Hands-on workshop · Full day',
     eligibility: 'Open to all students, beginners welcome. Bring your own laptop with stable internet.',
-    sessions: [{ date: '2026-12-01', time: '9:00 AM – 5:00 PM' }],
+    sessions: [{ date: '2026-12-01', time: '9:00 AM – 4:00 PM' }],
     venue: 'Amogha Hall, Block 3',
     poc: 'Harshdeep',
     registrationEnabled: true,
